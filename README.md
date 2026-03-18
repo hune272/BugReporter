@@ -99,6 +99,17 @@ git commit -m "resolve merge conflict"
 
 ---
 
+### Verifică dacă a fost adăugat ceva pe main (fără să descarci)
+
+Dacă vrei să vezi dacă colegii au pus ceva pe `main` înainte de a face merge:
+```bash
+git fetch origin              # descarcă informațiile din GitHub, dar nu modifică nimic local
+git log HEAD..origin/main     # arată commit-urile noi de pe main față de ce ai tu
+```
+Dacă nu apare nimic, ești la zi. Dacă apar commit-uri, rulează pasul 1 din fluxul de lucru.
+
+---
+
 ### Comenzi utile
 
 | Comandă | Ce face |
@@ -106,4 +117,5 @@ git commit -m "resolve merge conflict"
 | `git status` | vezi ce fișiere ai modificat |
 | `git log --oneline` | istoricul commit-urilor |
 | `git diff` | vezi exact ce ai schimbat |
+| `git fetch origin` | verifici dacă sunt modificări noi pe GitHub (fără să descarci) |
 | `git checkout -- .` | anulezi toate modificările nesalvate |
