@@ -21,6 +21,26 @@ BugReporter/
 
 ---
 
+## Prima configurare — Clonează repo-ul local
+
+Dacă e **prima dată** când lucrezi pe acest proiect, urmează pașii de mai jos:
+
+### 1. Clonează repository-ul
+```bash
+git clone https://github.com/USERNAME/BugReporter.git
+cd BugReporter
+```
+> Înlocuiește `USERNAME` cu username-ul de pe GitHub al owner-ului repo-ului.
+
+### 2. Treci pe branch-ul tău
+```bash
+git checkout hunor    # sau marius / vasile, după caz
+```
+
+Gata — acum poți lucra. Continuă cu **Fluxul de lucru zilnic** de mai jos.
+
+---
+
 ## Cum folosim Git — Ghid pentru echipă
 
 ### Regula de bază
