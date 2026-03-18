@@ -32,8 +32,10 @@ Fiecare lucrează **doar pe branch-ul său**. Codul ajunge pe `main` doar când 
 
 #### 1. Înainte de a începe să lucrezi — trage ultimele modificări
 ```bash
-git checkout hunor        # treci pe branch-ul tău
-git pull origin main      # ia ultimele modificări din main
+git checkout main         # treci pe main
+git pull origin main      # actualizezi main-ul
+git checkout hunor        # te întorci pe branch-ul tău
+git merge main            # aduci modificările din main pe branch-ul tău
 ```
 
 #### 2. Lucrează și salvează progresul (commit)
