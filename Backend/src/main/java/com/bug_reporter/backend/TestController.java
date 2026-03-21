@@ -1,4 +1,4 @@
-package com.hospital_management.backend;
+package com.bug_reporter.backend;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;

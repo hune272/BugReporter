@@ -1,4 +1,4 @@
-package com.hospital_management.backend;
+package com.bug_reporter.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
