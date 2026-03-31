@@ -3,6 +3,7 @@ package com.bug_reporter.backend.controller;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,12 +41,13 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpServletRequest request) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpServletRequest request, HttpServletResponse response) {
         try {
             User user = authService.login(
                     body.get("email"),
                     body.get("password"),
-                    request
+                    request,
+                    response
             );
             return ResponseEntity.ok(Map.of(
                     "id", user.getId(),
