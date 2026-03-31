@@ -35,6 +35,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
+    //later on the JsonIgnore must be removed, maybe:)
     @JsonIgnore
     //Relationships
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
