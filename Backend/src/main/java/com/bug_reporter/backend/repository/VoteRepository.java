@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface VoteRepository extends JpaRepository<Vote, Long> {
 
@@ -26,6 +28,9 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
 
     boolean existsByUserAndBug(User user, Bug bug);
 
-
     boolean existsByUserAndComment(User user, Comment comment);
+
+    List<Vote> findByBugId(Long bugId);
+
+    List<Vote> findByCommentId(Long commentId);
 }

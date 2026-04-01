@@ -83,4 +83,5 @@ public class VoteService {
     public Integer getCommentVoteCount(Long commentId) {
         return voteRepository.getCommentVoteCount(commentId);
     }
+
 }
