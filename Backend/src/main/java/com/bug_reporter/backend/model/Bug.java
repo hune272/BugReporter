@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "bugs")
@@ -38,4 +39,33 @@ public class Bug {
     private List<Vote> votes;
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BugTag> bugTags;
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Bug bug = (Bug) o;
+        return Objects.equals(id, bug.id) && Objects.equals(title, bug.title);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, title);
+    }
+
+    @Override
+    public String toString() {
+        return "Bug{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", text='" + text + '\'' +
+                ", createdAt=" + createdAt +
+                ", picture='" + picture + '\'' +
+                ", status=" + status +
+                ", author=" + author +
+                ", comments=" + comments +
+                ", votes=" + votes +
+                ", bugTags=" + bugTags +
+                '}';
+    }
 }
