@@ -34,12 +34,12 @@ public class VoteController {
     }
 
     @GetMapping("/bug/{bugId}/count")
-    public Integer getBugVoteCount(@RequestParam Long bugId) {
+    public Integer getBugVoteCount(@PathVariable Long bugId) {
         return voteService.getBugVoteCount(bugId);
     }
 
     @GetMapping("/comment/{commentId}/count")
-    public Integer getCommentVoteCount(@RequestParam Long commentId) {
+    public Integer getCommentVoteCount(@PathVariable Long commentId) {
         return voteService.getCommentVoteCount(commentId);
     }
 
