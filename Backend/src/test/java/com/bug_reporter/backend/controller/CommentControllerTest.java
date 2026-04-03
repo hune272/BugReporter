@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -67,13 +68,19 @@ class CommentControllerTest {
 
     @Test
     void addComment() {
-        when(commentService.save(comment)).thenReturn(comment);
+        Map<String, Object> body = Map.of(
+                "comment", "Initial comment",
+                "imageUrl", "image.png",
+                "authorId", 1L,
+                "bugId", 2L
+        );
+        when(commentService.save("Initial comment", "image.png", 1L, 2L)).thenReturn(comment);
 
-        Comment result = commentController.addComment(comment);
+        Comment result = commentController.addComment(body);
 
         assertNotNull(result);
         assertEquals(comment, result);
-        verify(commentService, times(1)).save(comment);
+        verify(commentService, times(1)).save("Initial comment", "image.png", 1L, 2L);
     }
 
     @Test
@@ -81,16 +88,21 @@ class CommentControllerTest {
         Comment updatedComment = new Comment();
         updatedComment.setComment("Updated");
         updatedComment.setImageUrl("updated.png");
+        Map<String, Object> body = Map.of(
+                "comment", "Updated",
+                "imageUrl", "updated.png",
+                "authorId", 1L,
+                "bugId", 2L
+        );
 
-        when(commentService.findById(1L)).thenReturn(comment);
-        when(commentService.save(any(Comment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(commentService.updateComment(1L, "Updated", "updated.png", 1L, 2L)).thenReturn(updatedComment);
 
-        Comment result = commentController.updateComment(1L, updatedComment);
+        Comment result = commentController.updateComment(1L, body);
 
         assertNotNull(result);
         assertEquals("Updated", result.getComment());
         assertEquals("updated.png", result.getImageUrl());
-        verify(commentService, times(1)).save(comment);
+        verify(commentService, times(1)).updateComment(1L, "Updated", "updated.png", 1L, 2L);
     }
 
     @Test
