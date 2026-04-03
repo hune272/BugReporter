@@ -10,13 +10,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -63,34 +61,55 @@ class BugControllerTest {
     void getBugById() throws Exception {
         when(bugService.findById(100L)).thenReturn(testBug);
 
-        Bug result = bugController.getBugById(100L);
+        ResponseEntity<Bug> result = bugController.getBugById(100L);
 
         assertNotNull(result);
-        assertEquals(100L, result.getId());
+        assertEquals(HttpStatusCode.valueOf(200), result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertEquals(100L, result.getBody().getId());
     }
 
     @Test
     void createBug() throws Exception {
-        List<Long> tags = List.of(5L, 6L);
+        Map<String, Object> body = Map.of(
+                "title", "UI Error",
+                "text", "Button not working",
+                "picture", "image.png",
+                "authorId", 1L,
+                "tagIds", List.of(5L, 6L)
+        );
+        when(bugService.save("UI Error", "Button not working", "image.png", 1L, List.of(5L, 6L)))
+                .thenReturn(testBug);
 
-        bugController.createBug(testBug, 1L, tags);
-        verify(bugService, times(1)).save(testBug, 1L, tags);
+        ResponseEntity<?> result = bugController.createBug(body);
+
+        assertNotNull(result);
+        assertEquals(HttpStatusCode.valueOf(201), result.getStatusCode());
+        verify(bugService, times(1)).save("UI Error", "Button not working", "image.png", 1L, List.of(5L, 6L));
     }
 
     @Test
     void updateBug() throws Exception {
-        when(bugService.updateBug(eq(100L), any(Bug.class), eq(1L))).thenReturn(testBug);
+        Map<String, Object> body = Map.of(
+                "title", "UI Error",
+                "text", "Button not working",
+                "picture", "image.png",
+                "status", "IN_PROGRESS",
+                "tagIds", List.of(5L, 6L)
+        );
+        when(bugService.updateBug(100L, "UI Error", "Button not working", "image.png",
+                BugStatus.IN_PROGRESS, List.of(5L, 6L))).thenReturn(testBug);
 
-        Bug result = bugController.updateBug(100L, testBug, 1L);
+        ResponseEntity<?> result = bugController.updateBug(100L, body);
         assertNotNull(result);
-        assertEquals("UI Error", result.getTitle());
+        assertEquals(HttpStatusCode.valueOf(200), result.getStatusCode());
     }
 
     @Test
     void deleteBug() throws Exception {
-        String response = bugController.deleteBug(100L, 1L);
+        ResponseEntity<?> response = bugController.deleteBug(100L);
 
-        assertEquals("Bug deleted", response);
-        verify(bugService, times(1)).deleteBug(100L, 1L);
+        assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
+        verify(bugService, times(1)).deleteBug(100L);
     }
 }
