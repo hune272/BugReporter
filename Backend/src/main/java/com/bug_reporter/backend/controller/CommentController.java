@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/comments"})
@@ -30,30 +31,24 @@ public class CommentController {
     }
 
     @PostMapping
-    public Comment addComment(@RequestBody Comment comment) {
-        return commentService.save(comment);
+    public Comment addComment(@RequestBody Map<String, Object> body) {
+        return commentService.save(
+                (String) body.get("comment"),
+                (String) body.get("imageUrl"),
+                getLongValue(body.get("authorId")),
+                getLongValue(body.get("bugId"))
+        );
     }
 
     @PutMapping("/{id}")
-    public Comment updateComment(@PathVariable Long id, @RequestBody Comment updatedComment) {
-        Comment existingComment = commentService.findById(id);
-
-        if (existingComment == null) {
-            return null;
-        }
-
-        existingComment.setComment(updatedComment.getComment());
-        existingComment.setImageUrl(updatedComment.getImageUrl());
-
-        if (updatedComment.getAuthor() != null) {
-            existingComment.setAuthor(updatedComment.getAuthor());
-        }
-
-        if (updatedComment.getBug() != null) {
-            existingComment.setBug(updatedComment.getBug());
-        }
-
-        return commentService.save(existingComment);
+    public Comment updateComment(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return commentService.updateComment(
+                id,
+                (String) body.get("comment"),
+                (String) body.get("imageUrl"),
+                getLongValue(body.get("authorId")),
+                getLongValue(body.get("bugId"))
+        );
     }
 
     @DeleteMapping("/{id}")
@@ -66,5 +61,15 @@ public class CommentController {
 
         commentService.delete(existingComment);
         return "Comment deleted successfully";
+    }
+
+    private Long getLongValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.parseLong(value.toString());
     }
 }
