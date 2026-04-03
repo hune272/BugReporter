@@ -126,7 +126,7 @@ class BugServiceTest {
         updatedInfo.setTitle("Titlu modif");
         updatedInfo.setStatus(BugStatus.IN_PROGRESS);
 
-        Bug result = bugService.updateBug(100L, updatedInfo, 1L);
+        Bug result = bugService.updateBug(100L, updatedInfo);
         assertNotNull(result);
         verify(bugRepository, times(1)).save(any(Bug.class));
     }
@@ -134,7 +134,7 @@ class BugServiceTest {
     @Test
     void deleteBug() {
         when(bugRepository.findById(100L)).thenReturn(Optional.of(testBug));
-        bugService.deleteBug(100L, 1L);
+        bugService.deleteBug(100L);
         verify(bugRepository, times(1)).delete(testBug);
     }
 }
