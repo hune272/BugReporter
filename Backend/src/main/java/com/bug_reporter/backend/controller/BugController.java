@@ -1,12 +1,15 @@
 package com.bug_reporter.backend.controller;
 
 import com.bug_reporter.backend.model.Bug;
+import com.bug_reporter.backend.model.enums.BugStatus;
 import com.bug_reporter.backend.service.BugService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.text.html.Option;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bugs")
@@ -26,26 +29,79 @@ public class BugController {
     }
 
     @GetMapping("/{id}")
-    public Bug getBugById(@PathVariable("id") Long id) {
-        return bugService.findById(id);
+    public ResponseEntity<Bug> getBugById(@PathVariable("id") Long id) {
+        Bug bug = bugService.findById(id);
+        return bug != null ? ResponseEntity.ok(bug) : ResponseEntity.notFound().build();
     }
 
     @PostMapping
-    public void createBug(@RequestBody Bug bug, @RequestParam Long authorId, @RequestParam List<Long> tagId) {
-        bugService.save(bug, authorId, tagId);
+    public ResponseEntity<?> createBug(@RequestBody Map<String, Object> body) {
+        try {
+            Bug bug = bugService.save(
+                    (String) body.get("title"),
+                    (String) body.get("text"),
+                    (String) body.get("picture"),
+                    getLongValue(body.get("authorId")),
+                    getLongListValue(body.get("tagIds"))
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(bug);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")
-    public Bug updateBug(@PathVariable Long id,
-                         @RequestBody Bug updatedBugData,
-                         @RequestParam Long requesterId) {
-        return bugService.updateBug(id, updatedBugData, requesterId);
+    public ResponseEntity<?> updateBug(@PathVariable Long id,
+                                       @RequestBody Map<String, Object> body) {
+        try {
+            Bug bug = bugService.updateBug(
+                    id,
+                    (String) body.get("title"),
+                    (String) body.get("text"),
+                    (String) body.get("picture"),
+                    getBugStatus(body.get("status")),
+                    getLongListValue(body.get("tagIds"))
+            );
+            return ResponseEntity.ok(bug);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{id}")
-    public String deleteBug(@PathVariable Long id, @RequestParam Long requesterId) {
-        bugService.deleteBug(id, requesterId);
-        return "Bug deleted";
+    public ResponseEntity<?> deleteBug(@PathVariable Long id) {
+        try {
+            bugService.deleteBug(id);
+            return ResponseEntity.ok(Map.of("message", "Bug deleted"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    private Long getLongValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.parseLong(value.toString());
+    }
+
+    private List<Long> getLongListValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return ((List<?>) value).stream()
+                .map(this::getLongValue)
+                .toList();
+    }
+
+    private BugStatus getBugStatus(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return BugStatus.valueOf(value.toString());
     }
 
 }

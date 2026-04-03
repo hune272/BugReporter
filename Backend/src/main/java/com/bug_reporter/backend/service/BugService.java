@@ -16,8 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
+import java.util.Objects;
 @Service
 public class BugService {
 
@@ -38,27 +37,23 @@ public class BugService {
 
     @Transactional
     public void save(Bug bug, Long authorId, List<Long> tagId) {
-
         User author = userRepository.findById(authorId).
                         orElseThrow(() -> new RuntimeException("User not found"));
         bug.setAuthor(author);
         bug.setCreatedAt(LocalDateTime.now());
         bug.setStatus(BugStatus.RECEIVED);
-
-        List<BugTag> bugTags = new ArrayList<>();
-        if(tagId != null && !tagId.isEmpty()) {
-            for(Long tagId1 : tagId) {
-                Tag tag =  tagRepository.findById(tagId1).
-                        orElseThrow(() -> new RuntimeException("Tag not found"));
-
-                BugTag bugTag = new BugTag();
-                bugTag.setBug(bug);
-                bugTag.setTag(tag);
-                bugTags.add(bugTag);
-            }
-        }
-        bug.setBugTags(bugTags);
+        bug.setBugTags(buildBugTags(bug, tagId));
         bugRepository.save(bug);
+    }
+
+    @Transactional
+    public Bug save(String title, String text, String picture, Long authorId, List<Long> tagIds) {
+        Bug bug = new Bug();
+        bug.setTitle(title);
+        bug.setText(text);
+        bug.setPicture(picture);
+        save(bug, authorId, tagIds);
+        return bug;
     }
 
     public List<Bug> getAllBugsByAuthorId(Long authorId) {
@@ -75,44 +70,77 @@ public class BugService {
 
     public List<Bug> getFilteredBugs(String title, Long authorId, Long tagId) {
         Sort sortByDataDesc = Sort.by(Sort.Direction.DESC, "createdAt");
-
-        if(authorId != null) {
-            return bugRepository.findByAuthorId(authorId, sortByDataDesc);
-        }
-        if(title != null && !title.isEmpty()) {
-            return bugRepository.findByTitleContainingIgnoreCase(title, sortByDataDesc);
-        }
-        if(tagId != null) {
-            return bugRepository.findByBugTags_Tag_Id(tagId, sortByDataDesc);
-        }
-
-        return bugRepository.findAll(sortByDataDesc);
+        return bugRepository.findAll(sortByDataDesc).stream()
+                .filter(bug -> authorId == null || Objects.equals(bug.getAuthor().getId(), authorId))
+                .filter(bug -> title == null || title.isBlank() ||
+                        (bug.getTitle() != null && bug.getTitle().toLowerCase().contains(title.toLowerCase())))
+                .filter(bug -> tagId == null || (bug.getBugTags() != null &&
+                        bug.getBugTags().stream().anyMatch(bugTag -> Objects.equals(bugTag.getTag().getId(), tagId))))
+                .toList();
     }
 
     @Transactional
-    public Bug updateBug(Long id, Bug updatedBugData, Long requesterId) {
+    public Bug updateBug(Long id, Bug updatedBugData) {
         Bug bug = bugRepository.findById(id).
                 orElseThrow(() -> new RuntimeException("Bug not found"));
-
-        if(!bug.getAuthor().getId().equals(requesterId)) {
-            throw new RuntimeException("You are not allowed to update this bug");
-        }
 
         bug.setTitle(updatedBugData.getTitle());
         bug.setText(updatedBugData.getText());
         bug.setPicture(updatedBugData.getPicture());
-        bug.setComments(updatedBugData.getComments());
-        bug.setBugTags(updatedBugData.getBugTags());
+        if (updatedBugData.getStatus() != null) {
+            bug.setStatus(updatedBugData.getStatus());
+        }
         return bugRepository.save(bug);
     }
 
     @Transactional
-    public void deleteBug(Long id, Long requesterId) {
+    public Bug updateBug(Long id,
+                         String title,
+                         String text,
+                         String picture,
+                         BugStatus status,
+                         List<Long> tagIds) {
+        Bug bug = bugRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Bug not found"));
+
+        bug.setTitle(title);
+        bug.setText(text);
+        bug.setPicture(picture);
+        if (status != null) {
+            bug.setStatus(status);
+        }
+        if (tagIds != null) {
+            if (bug.getBugTags() == null) {
+                bug.setBugTags(new ArrayList<>());
+            } else {
+                bug.getBugTags().clear();
+            }
+            bug.getBugTags().addAll(buildBugTags(bug, tagIds));
+        }
+
+        return bugRepository.save(bug);
+    }
+
+    @Transactional
+    public void deleteBug(Long id) {
         Bug bug = bugRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Bug not found"));
-        if(!bug.getAuthor().getId().equals(requesterId)) {
-            throw new RuntimeException("You are not allowed to delete this bug");
-        }
         bugRepository.delete(bug);
+    }
+
+    private List<BugTag> buildBugTags(Bug bug, List<Long> tagIds) {
+        List<BugTag> bugTags = new ArrayList<>();
+        if (tagIds != null && !tagIds.isEmpty()) {
+            for (Long tagId : tagIds) {
+                Tag tag = tagRepository.findById(tagId)
+                        .orElseThrow(() -> new RuntimeException("Tag not found"));
+
+                BugTag bugTag = new BugTag();
+                bugTag.setBug(bug);
+                bugTag.setTag(tag);
+                bugTags.add(bugTag);
+            }
+        }
+        return bugTags;
     }
 }
