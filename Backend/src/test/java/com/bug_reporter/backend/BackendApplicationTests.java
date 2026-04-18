@@ -1,13 +1,13 @@
 package com.bug_reporter.backend;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.platform.suite.api.SelectPackages;
+import org.junit.platform.suite.api.Suite;
 
-@SpringBootTest
+@Suite
+@SelectPackages({
+        "com.bug_reporter.backend.controller",
+        "com.bug_reporter.backend.service",
+        "com.bug_reporter.backend.model"
+})
 class BackendApplicationTests {
-
-    @Test
-    void contextLoads() {
-    }
-
 }

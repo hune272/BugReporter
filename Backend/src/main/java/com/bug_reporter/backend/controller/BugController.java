@@ -3,49 +3,99 @@ package com.bug_reporter.backend.controller;
 import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.service.BugService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.text.html.Option;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bugs")
 @CrossOrigin
 public class BugController {
 
+    private final BugService bugService;
+
     @Autowired
-    private BugService bugService;
+    public BugController(BugService bugService) {
+        this.bugService = bugService;
+    }
 
     @GetMapping
-    public List<Bug> getBugs(
+    public ResponseEntity<List<Bug>> getBugs(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Long authorId,
             @RequestParam(required = false) Long tagId) {
 
-        return bugService.getFilteredBugs(title, authorId, tagId);
+        return ResponseEntity.ok(bugService.getFilteredBugs(title, authorId, tagId));
+        //200 OK
     }
 
     @GetMapping("/{id}")
-    public Bug getBugById(@PathVariable("id") Long id) {
-        return bugService.findById(id);
+    public ResponseEntity<?> getBugById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(bugService.findById(id));
+            //200 OK
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
+        }
     }
 
     @PostMapping
-    public void createBug(@RequestBody Bug bug, @RequestParam Long authorId, @RequestParam List<Long> tagId) {
-        bugService.save(bug, authorId, tagId);
+    public ResponseEntity<?> createBug(@RequestBody Bug bug) {
+        try {
+            Bug created = bugService.save(bug);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            //201 Created
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            //400 Bad Request
+        }
     }
 
     @PutMapping("/{id}")
-    public Bug updateBug(@PathVariable Long id,
-                         @RequestBody Bug updatedBugData,
-                         @RequestParam Long requesterId) {
-        return bugService.updateBug(id, updatedBugData, requesterId);
+    public ResponseEntity<?> updateBug(@PathVariable Long id,
+                                       @RequestBody Bug bug,
+                                       @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+            //401 Unauthorized
+        }
+
+        try {
+            Bug updated = bugService.updateBug(id, bug, requesterId);
+            return ResponseEntity.ok(updated);
+            //200 OK
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+            //403 Forbidden
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
+        }
     }
 
     @DeleteMapping("/{id}")
-    public String deleteBug(@PathVariable Long id, @RequestParam Long requesterId) {
-        bugService.deleteBug(id, requesterId);
-        return "Bug deleted";
-    }
+    public ResponseEntity<?> deleteBug(@PathVariable Long id,
+                                       @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+            //401 Unauthorized
+        }
 
+        try {
+            bugService.deleteBug(id, requesterId);
+            return ResponseEntity.noContent().build();
+            //204 No Content
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+            //403 Forbidden
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
+        }
+    }
 }

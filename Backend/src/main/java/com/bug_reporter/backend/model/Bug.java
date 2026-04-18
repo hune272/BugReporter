@@ -1,6 +1,7 @@
 package com.bug_reporter.backend.model;
 
 import com.bug_reporter.backend.model.enums.BugStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,13 +31,16 @@ public class Bug {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BugStatus status;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Comment> comments;
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Vote> votes;
+    @JsonIgnore
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BugTag> bugTags;
 

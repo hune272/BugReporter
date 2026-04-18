@@ -4,7 +4,6 @@ import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.Vote;
-import com.bug_reporter.backend.model.enums.VoteType;
 import com.bug_reporter.backend.repository.BugRepository;
 import com.bug_reporter.backend.repository.CommentRepository;
 import com.bug_reporter.backend.repository.UserRepository;
@@ -18,70 +17,87 @@ import java.util.List;
 @Service
 public class VoteService {
 
+    private final VoteRepository voteRepository;
+    private final UserRepository userRepository;
+    private final BugRepository bugRepository;
+    private final CommentRepository commentRepository;
+
     @Autowired
-    private VoteRepository voteRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private BugRepository bugRepository;
-    @Autowired
-    private CommentRepository commentRepository;
+    public VoteService(VoteRepository voteRepository, UserRepository userRepository,
+                       BugRepository bugRepository, CommentRepository commentRepository) {
+        this.voteRepository = voteRepository;
+        this.userRepository = userRepository;
+        this.bugRepository = bugRepository;
+        this.commentRepository = commentRepository;
+    }
 
     public List<Vote> findAll() {
-       return voteRepository.findAll();
+        return voteRepository.findAll();
     }
 
     @Transactional
-    public void voteBug(Long userId, Long bugId, VoteType type) {
-
-        User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-        Bug bug = bugRepository.findById(bugId).
-                orElseThrow(() -> new RuntimeException("Bug not found"));
-
-        if(bug.getAuthor().equals(user)) {
-            throw  new RuntimeException("You can't vote your bug");
+    public Vote voteBug(Vote vote) {
+        if (vote.getUser() == null || vote.getUser().getId() == null) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        if (vote.getBug() == null || vote.getBug().getId() == null) {
+            throw new IllegalArgumentException("Bug ID is required");
         }
 
-        if(voteRepository.existsByUserAndBug(user, bug)){
-            throw new  RuntimeException("User already voted on this bug");
+        User user = userRepository.findById(vote.getUser().getId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + vote.getUser().getId()));
+        Bug bug = bugRepository.findById(vote.getBug().getId())
+                .orElseThrow(() -> new RuntimeException("Bug not found with id: " + vote.getBug().getId()));
+
+        if (bug.getAuthor().equals(user)) {
+            throw new SecurityException("You can't vote your own bug");
+        }
+        if (voteRepository.existsByUserAndBug(user, bug)) {
+            throw new IllegalStateException("User already voted on this bug");
         }
 
-        Vote vote = new Vote();
         vote.setUser(user);
         vote.setBug(bug);
-        vote.setType(type);
-        voteRepository.save(vote);
+        return voteRepository.save(vote);
     }
 
-    public void voteComment(Long userId, Long commentId, VoteType type) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Comment comment = commentRepository.findById(commentId).
-                orElseThrow(() -> new RuntimeException("Comment not found"));
-
-        if(comment.getAuthor().equals(user)) {
-            throw  new RuntimeException("You can't vote your comment");
+    @Transactional
+    public Vote voteComment(Vote vote) {
+        if (vote.getUser() == null || vote.getUser().getId() == null) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        if (vote.getComment() == null || vote.getComment().getId() == null) {
+            throw new IllegalArgumentException("Comment ID is required");
         }
 
-        if(voteRepository.existsByUserAndComment(user, comment)){
-            throw new  RuntimeException("User already voted on this comment");
+        User user = userRepository.findById(vote.getUser().getId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + vote.getUser().getId()));
+        Comment comment = commentRepository.findById(vote.getComment().getId())
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + vote.getComment().getId()));
+
+        if (comment.getAuthor().equals(user)) {
+            throw new SecurityException("You can't vote your own comment");
+        }
+        if (voteRepository.existsByUserAndComment(user, comment)) {
+            throw new IllegalStateException("User already voted on this comment");
         }
 
-        Vote vote = new Vote();
         vote.setUser(user);
         vote.setComment(comment);
-        vote.setType(type);
-        voteRepository.save(vote);
+        return voteRepository.save(vote);
     }
 
     public Integer getBugVoteCount(Long bugId) {
+        if (!bugRepository.existsById(bugId)) {
+            throw new RuntimeException("Bug not found with id: " + bugId);
+        }
         return voteRepository.getBugVoteCount(bugId);
     }
 
     public Integer getCommentVoteCount(Long commentId) {
+        if (!commentRepository.existsById(commentId)) {
+            throw new RuntimeException("Comment not found with id: " + commentId);
+        }
         return voteRepository.getCommentVoteCount(commentId);
     }
-
 }

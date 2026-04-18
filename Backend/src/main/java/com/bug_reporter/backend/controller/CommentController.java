@@ -3,68 +3,80 @@ package com.bug_reporter.backend.controller;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/comments"})
+@CrossOrigin
 public class CommentController {
 
+    private final CommentService commentService;
+
     @Autowired
-    private CommentService commentService;
+    public CommentController(CommentService commentService) {
+        this.commentService = commentService;
+    }
 
     @GetMapping
-    public List<Comment> getAllComments() {
-        return commentService.findAll();
+    public ResponseEntity<List<Comment>> getAllComments() {
+        return ResponseEntity.ok(commentService.findAll());
+        //200 OK
     }
 
     @GetMapping("/{id}")
-    public Comment getCommentById(@PathVariable Long id) {
-        return commentService.findById(id);
+    public ResponseEntity<?> getCommentById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(commentService.findById(id));
+            //200 OK
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
+        }
     }
 
     @GetMapping("/bug/{bugId}")
-    public List<Comment> getCommentsByBugId(@PathVariable Long bugId) {
-        return commentService.getCommentsByBugId(bugId);
+    public ResponseEntity<List<Comment>> getCommentsByBugId(@PathVariable Long bugId) {
+        return ResponseEntity.ok(commentService.getCommentsByBugId(bugId));
+        //200 OK
     }
 
     @PostMapping
-    public Comment addComment(@RequestBody Comment comment) {
-        return commentService.save(comment);
+    public ResponseEntity<?> addComment(@RequestBody Comment comment) {
+        try {
+            Comment created = commentService.save(comment);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            //201 Created
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            //400 Bad Request
+        }
     }
 
     @PutMapping("/{id}")
-    public Comment updateComment(@PathVariable Long id, @RequestBody Comment updatedComment) {
-        Comment existingComment = commentService.findById(id);
-
-        if (existingComment == null) {
-            return null;
+    public ResponseEntity<?> updateComment(@PathVariable Long id, @RequestBody Comment updatedComment) {
+        try {
+            return ResponseEntity.ok(commentService.updateComment(id, updatedComment));
+            //200 OK
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
         }
-
-        existingComment.setComment(updatedComment.getComment());
-        existingComment.setImageUrl(updatedComment.getImageUrl());
-
-        if (updatedComment.getAuthor() != null) {
-            existingComment.setAuthor(updatedComment.getAuthor());
-        }
-
-        if (updatedComment.getBug() != null) {
-            existingComment.setBug(updatedComment.getBug());
-        }
-
-        return commentService.save(existingComment);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteComment(@PathVariable Long id) {
-        Comment existingComment = commentService.findById(id);
-
-        if (existingComment == null) {
-            return "Comment not found";
+    public ResponseEntity<?> deleteComment(@PathVariable Long id) {
+        try {
+            commentService.deleteComment(id);
+            return ResponseEntity.noContent().build();
+            //204 No Content
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
         }
-
-        commentService.delete(existingComment);
-        return "Comment deleted successfully";
     }
 }
