@@ -31,14 +31,12 @@ public class Bug {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BugStatus status;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
-    @JsonIgnore
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Comment> comments;
-    @JsonIgnore
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Vote> votes;
