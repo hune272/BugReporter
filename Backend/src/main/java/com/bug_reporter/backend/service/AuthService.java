@@ -59,7 +59,7 @@ public class AuthService {
         }
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                user.getEmail(),
+                user.getId(),
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
@@ -70,11 +70,6 @@ public class AuthService {
 
         HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
         securityContextRepository.saveContext(context, request, response);
-
-        HttpSession session = request.getSession(true);
-        session.setAttribute("userId", user.getId());
-        session.setAttribute("userEmail", user.getEmail());
-        session.setAttribute("userRole", user.getRole().name());
 
         return user;
     }

@@ -36,9 +36,11 @@ public class Bug {
     private User author;
     @JsonIgnore
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Comment> comments;
     @JsonIgnore
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Vote> votes;
     @JsonIgnore
     @OneToMany(mappedBy = "bug", cascade = CascadeType.ALL, orphanRemoval = true)

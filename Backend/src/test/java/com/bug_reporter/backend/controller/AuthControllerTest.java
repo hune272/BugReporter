@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AuthControllerTest {
+public class AuthControllerTest {
 
     @Mock
     private AuthService authService;
@@ -56,7 +56,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> result = authController.register(body);
 
-        assertEquals(200, result.getStatusCode().value());
+        assertEquals(201, result.getStatusCode().value());
         assertNotNull(result.getBody());
         verify(authService, times(1)).register("testUser", "test@example.com", "password123");
     }
@@ -112,9 +112,9 @@ class AuthControllerTest {
     void logout() {
         doNothing().when(authService).logout(request);
 
-        ResponseEntity<?> result = authController.logout(request);
+        ResponseEntity<Void> result = authController.logout(request);
 
-        assertEquals(200, result.getStatusCode().value());
+        assertEquals(204, result.getStatusCode().value());
         verify(authService, times(1)).logout(request);
     }
 }

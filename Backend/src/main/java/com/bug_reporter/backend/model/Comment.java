@@ -1,6 +1,7 @@
 package com.bug_reporter.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,7 +33,7 @@ public class Comment {
 
     @ManyToOne
     @JoinColumn(name = "bug_id", nullable = false)
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Bug bug;
 
     @Column(name = "created_at", nullable = false, updatable = false)

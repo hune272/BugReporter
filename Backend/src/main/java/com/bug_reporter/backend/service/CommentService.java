@@ -14,64 +14,61 @@ import java.util.List;
 @Service
 public class CommentService {
 
+    private final CommentRepository commentRepository;
+    private final BugRepository bugRepository;
+    private final UserRepository userRepository;
+
     @Autowired
-    private CommentRepository commentRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private BugRepository bugRepository;
+    public CommentService(CommentRepository commentRepository, BugRepository bugRepository, UserRepository userRepository) {
+        this.commentRepository = commentRepository;
+        this.bugRepository = bugRepository;
+        this.userRepository = userRepository;
+    }
 
     public List<Comment> findAll() {
         return (List<Comment>) commentRepository.findAll();
     }
 
     public Comment findById(Long id) {
-        return commentRepository.findById(id).orElse(null);
+        return commentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
     }
 
     public Comment save(Comment comment) {
+        if (comment.getBug() != null && comment.getBug().getId() != null) {
+            Bug bug = bugRepository.findById(comment.getBug().getId())
+                    .orElseThrow(() -> new RuntimeException("Bug not found with id: " + comment.getBug().getId()));
+            comment.setBug(bug);
+        }
+        if (comment.getAuthor() != null && comment.getAuthor().getId() != null) {
+            User author = userRepository.findById(comment.getAuthor().getId())
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + comment.getAuthor().getId()));
+            comment.setAuthor(author);
+        }
         return commentRepository.save(comment);
     }
 
-    public Comment save(String commentText, String imageUrl, Long authorId, Long bugId) {
-        User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Bug bug = bugRepository.findById(bugId)
-                .orElseThrow(() -> new RuntimeException("Bug not found"));
-
-        Comment comment = new Comment();
-        comment.setComment(commentText);
-        comment.setImageUrl(imageUrl);
-        comment.setAuthor(author);
-        comment.setBug(bug);
-
-        return commentRepository.save(comment);
-    }
-
-    public Comment updateComment(Long id, String commentText, String imageUrl, Long authorId, Long bugId) {
+    public Comment updateComment(Long id, Comment updatedComment) {
         Comment existingComment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
 
-        existingComment.setComment(commentText);
-        existingComment.setImageUrl(imageUrl);
+        existingComment.setComment(updatedComment.getComment());
+        existingComment.setImageUrl(updatedComment.getImageUrl());
 
-        if (authorId != null) {
-            User author = userRepository.findById(authorId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            existingComment.setAuthor(author);
+        if (updatedComment.getAuthor() != null) {
+            existingComment.setAuthor(updatedComment.getAuthor());
         }
-
-        if (bugId != null) {
-            Bug bug = bugRepository.findById(bugId)
-                    .orElseThrow(() -> new RuntimeException("Bug not found"));
-            existingComment.setBug(bug);
+        if (updatedComment.getBug() != null) {
+            existingComment.setBug(updatedComment.getBug());
         }
-
         return commentRepository.save(existingComment);
     }
 
-    public void delete(Comment comment) {
-        commentRepository.delete(comment);
+    public void deleteComment(Long id) {
+        if (!commentRepository.existsById(id)) {
+            throw new RuntimeException("Comment not found with id: " + id);
+        }
+        commentRepository.deleteById(id);
     }
 
     public List<Comment> getCommentsByBugId(Long bugId) {
