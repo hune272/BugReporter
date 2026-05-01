@@ -1,0 +1,58 @@
+{
+  "title": "BugTrack Pro",
+  "subtitle": "System authentication for technical staff",
+  "alertTitle": "ACCESS RESTRICTED",
+  "alertMessage": "Your account has been flagged for a policy violation. Please contact your system administrator or refer to the v2.4.0-stable security documentation.",
+  "fields": {
+    "username": {
+      "label": "USERNAME",
+      "placeholder": "e.g. dev_admin_01",
+      "icon": "user"
+    },
+    "password": {
+      "label": "PASSWORD",
+      "placeholder": "",
+      "icon": "lock",
+      "forgotLabel": "Forgot Password?",
+      "forgotHref": "/forgot-password"
+    }
+  },
+  "keepActiveLabel": "Maintain active session for 24 hours",
+  "submitLabel": "INITIALIZE SESSION",
+  "submittingLabel": "AUTHENTICATING...",
+  "registerPrompt": "New operative?",
+  "registerLinkLabel": "Register User Account",
+  "registerHref": "/register",
+  "validation": {
+    "username": {
+      "minLength": 3,
+      "maxLength": 32,
+      "pattern": "^[a-zA-Z0-9_]+$",
+      "messages": {
+        "required": "Username is required.",
+        "minLength": "Username must be at least 3 characters.",
+        "maxLength": "Username may be at most 32 characters.",
+        "pattern": "Username may contain only letters, digits, and underscores."
+      }
+    },
+    "password": {
+      "minLength": 6,
+      "messages": {
+        "required": "Password is required.",
+        "minLength": "Password must be at least 6 characters."
+      }
+    }
+  },
+  "errors": {
+    "invalidCredentials": "Invalid credentials. Verify your username and password.",
+    "network": "Unable to reach authentication server. Check your connection.",
+    "unknown": "An unexpected error occurred. Please try again."
+  },
+  "footer": {
+    "metaItems": [
+      { "icon": "lock", "text": "AES-256 ENCRYPTED" },
+      { "icon": "package", "text": "V2.4.0-STABLE" }
+    ],
+    "disclaimer": "Proprietary software for authorized personnel only. Monitoring is active. Unauthorized access attempts are logged and reported to the QA Lead."
+  }
+}
