@@ -19,4 +19,12 @@ public interface BugRepository extends JpaRepository<Bug, Long> {
     List<Bug> findByTitleContainingIgnoreCase(String title, Sort sort);
 
     List<Bug> findByBugTags_Tag_Id(Long tagId, Sort sort);
+
+    List<Bug> findDistinctByTitleContainingIgnoreCaseAndAuthorId(String title, Long authorId, Sort sort);
+
+    List<Bug> findDistinctByTitleContainingIgnoreCaseAndBugTags_Tag_Id(String title, Long tagId, Sort sort);
+
+    List<Bug> findDistinctByAuthorIdAndBugTags_Tag_Id(Long authorId, Long tagId, Sort sort);
+
+    List<Bug> findDistinctByTitleContainingIgnoreCaseAndAuthorIdAndBugTags_Tag_Id(String title, Long authorId, Long tagId, Sort sort);
 }

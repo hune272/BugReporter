@@ -4,6 +4,7 @@ import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.Vote;
+import com.bug_reporter.backend.model.enums.VoteType;
 import com.bug_reporter.backend.repository.BugRepository;
 import com.bug_reporter.backend.repository.CommentRepository;
 import com.bug_reporter.backend.repository.UserRepository;
@@ -91,13 +92,19 @@ public class VoteService {
         if (!bugRepository.existsById(bugId)) {
             throw new RuntimeException("Bug not found with id: " + bugId);
         }
-        return voteRepository.getBugVoteCount(bugId);
+        return calculateVoteCount(voteRepository.findByBugId(bugId));
     }
 
     public Integer getCommentVoteCount(Long commentId) {
         if (!commentRepository.existsById(commentId)) {
             throw new RuntimeException("Comment not found with id: " + commentId);
         }
-        return voteRepository.getCommentVoteCount(commentId);
+        return calculateVoteCount(voteRepository.findByCommentId(commentId));
+    }
+
+    private int calculateVoteCount(List<Vote> votes) {
+        return votes.stream()
+                .mapToInt(vote -> vote.getType() == VoteType.UPVOTE ? 1 : -1)
+                .sum();
     }
 }

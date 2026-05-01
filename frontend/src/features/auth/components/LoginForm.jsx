@@ -1,41 +1,41 @@
-import FormField from '../../../components/forms/FormField.jsx';
+import FormField from '@shared/components/forms/FormField.jsx';
 import './LoginForm.css';
 
 function LoginForm({
   config,
-  username,
+  email,
   password,
   keepActive,
   isLoading,
   fieldErrors,
   errorMessage,
-  onUsernameChange,
+  onEmailChange,
   onPasswordChange,
   onKeepActiveChange,
   onSubmit,
 }) {
   const { fields, keepActiveLabel, submitLabel, submittingLabel } = config;
   const isSubmitDisabled =
-    isLoading || username.trim().length === 0 || password.length === 0;
+    isLoading || email.trim().length === 0 || password.length === 0;
 
   return (
     <form className="login-form" onSubmit={onSubmit} noValidate>
       <FormField
-        id="username"
-        label={fields.username.label}
-        type="text"
-        value={username}
-        onChange={onUsernameChange}
-        placeholder={fields.username.placeholder}
-        iconName={fields.username.icon}
+        id="email"
+        label={fields.email.label}
+        type="email"
+        value={email}
+        onChange={onEmailChange}
+        placeholder={fields.email.placeholder}
+        iconName={fields.email.icon}
         monospacePlaceholder
-        autoComplete="username"
+        autoComplete="email"
         disabled={isLoading}
         required
       />
-      {fieldErrors.username && (
+      {fieldErrors.email && (
         <p className="login-form__field-error" role="alert">
-          {fieldErrors.username}
+          {fieldErrors.email}
         </p>
       )}
 

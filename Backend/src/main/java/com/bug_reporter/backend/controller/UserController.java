@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -20,9 +21,32 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<User>> getAllUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer limit) {
+        if (search != null || limit != null) {
+            return ResponseEntity.ok(userService.getUsers(search, limit));
+        }
         return ResponseEntity.ok(userService.getAllUsers());
         //HTTP 200 OK
+    }
+
+    public ResponseEntity<List<User>> getAllUsers() {
+        return getAllUsers(null, null);
+    }
+
+    @GetMapping("/scores")
+    public ResponseEntity<Map<Long, Double>> getUserScores() {
+        return ResponseEntity.ok(userService.getUserScores());
+    }
+
+    @GetMapping("/{id}/score")
+    public ResponseEntity<?> getUserScore(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(Map.of("userId", id, "score", userService.getUserScore(id)));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/{id}")

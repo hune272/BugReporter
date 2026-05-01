@@ -51,17 +51,38 @@ public class BugService {
 
     public List<Bug> getFilteredBugs(String title, Long authorId, Long tagId) {
         Sort sortByDataDesc = Sort.by(Sort.Direction.DESC, "createdAt");
+        boolean hasTitle = title != null && !title.isBlank();
+        int activeFilters = (hasTitle ? 1 : 0) + (authorId != null ? 1 : 0) + (tagId != null ? 1 : 0);
 
-        if (authorId != null) {
+        if (activeFilters == 0) {
+            return bugRepository.findAll(sortByDataDesc);
+        }
+        if (activeFilters == 1 && authorId != null) {
             return bugRepository.findByAuthorId(authorId, sortByDataDesc);
         }
-        if (title != null && !title.isEmpty()) {
+        if (activeFilters == 1 && hasTitle) {
             return bugRepository.findByTitleContainingIgnoreCase(title, sortByDataDesc);
         }
-        if (tagId != null) {
+        if (activeFilters == 1) {
             return bugRepository.findByBugTags_Tag_Id(tagId, sortByDataDesc);
         }
-        return bugRepository.findAll(sortByDataDesc);
+
+        if (hasTitle && authorId != null && tagId != null) {
+            return bugRepository.findDistinctByTitleContainingIgnoreCaseAndAuthorIdAndBugTags_Tag_Id(
+                    title,
+                    authorId,
+                    tagId,
+                    sortByDataDesc
+            );
+        }
+        if (hasTitle && authorId != null) {
+            return bugRepository.findDistinctByTitleContainingIgnoreCaseAndAuthorId(title, authorId, sortByDataDesc);
+        }
+        if (hasTitle) {
+            return bugRepository.findDistinctByTitleContainingIgnoreCaseAndBugTags_Tag_Id(title, tagId, sortByDataDesc);
+        }
+
+        return bugRepository.findDistinctByAuthorIdAndBugTags_Tag_Id(authorId, tagId, sortByDataDesc);
     }
 
     @Transactional

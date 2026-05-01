@@ -1,26 +1,26 @@
-import { apiRequest } from './client.js';
-import { ENDPOINTS } from '../utils/constants.js';
+import { apiRequest } from '@shared/api/client.js';
+import { ENDPOINTS } from '@shared/utils/constants.js';
 
 // Switch to 'application/x-www-form-urlencoded' if the backend uses Spring
 // Security's default form-login filter instead of a JSON-aware controller.
 const LOGIN_CONTENT_TYPE = 'application/json';
 
-function buildLoginBody(username, password) {
+function buildLoginBody(email, password) {
   if (LOGIN_CONTENT_TYPE === 'application/x-www-form-urlencoded') {
     const params = new URLSearchParams();
-    params.append('username', username);
+    params.append('email', email);
     params.append('password', password);
     return params.toString();
   }
-  return JSON.stringify({ username, password });
+  return JSON.stringify({ email, password });
 }
 
 export const authApi = {
-  async login({ username, password }) {
+  async login({ email, password }) {
     const result = await apiRequest(ENDPOINTS.login, {
       method: 'POST',
       headers: { 'Content-Type': LOGIN_CONTENT_TYPE },
-      body: buildLoginBody(username, password),
+      body: buildLoginBody(email, password),
     });
     if (result.success) {
       return { success: true, status: result.status, user: result.data };

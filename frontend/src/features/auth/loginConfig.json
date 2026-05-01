@@ -1,12 +1,11 @@
 {
-  "title": "BugTrack Pro",
-  "subtitle": "System authentication for technical staff",
+  "title": "Bug Reporter",
   "alertTitle": "ACCESS RESTRICTED",
   "alertMessage": "Your account has been flagged for a policy violation. Please contact your system administrator or refer to the v2.4.0-stable security documentation.",
   "fields": {
-    "username": {
-      "label": "USERNAME",
-      "placeholder": "e.g. dev_admin_01",
+    "email": {
+      "label": "EMAIL",
+      "placeholder": "e.g. user@example.com",
       "icon": "user"
     },
     "password": {
@@ -24,15 +23,11 @@
   "registerLinkLabel": "Register User Account",
   "registerHref": "/register",
   "validation": {
-    "username": {
-      "minLength": 3,
-      "maxLength": 32,
-      "pattern": "^[a-zA-Z0-9_]+$",
+    "email": {
+      "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
       "messages": {
-        "required": "Username is required.",
-        "minLength": "Username must be at least 3 characters.",
-        "maxLength": "Username may be at most 32 characters.",
-        "pattern": "Username may contain only letters, digits, and underscores."
+        "required": "Email is required.",
+        "pattern": "Enter a valid email address."
       }
     },
     "password": {
@@ -44,7 +39,7 @@
     }
   },
   "errors": {
-    "invalidCredentials": "Invalid credentials. Verify your username and password.",
+    "invalidCredentials": "Invalid credentials. Verify your email and password.",
     "network": "Unable to reach authentication server. Check your connection.",
     "unknown": "An unexpected error occurred. Please try again."
   },
