@@ -70,6 +70,9 @@ public class AuthService {
 
         HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
         securityContextRepository.saveContext(context, request, response);
+        request.getSession(true).setAttribute("userId", user.getId());
+        request.getSession(true).setAttribute("userEmail", user.getEmail());
+        request.getSession(true).setAttribute("userRole", user.getRole().name());
 
         return user;
     }
@@ -79,5 +82,10 @@ public class AuthService {
         if (session != null) {
             session.invalidate();
         }
+    }
+
+    public User getCurrentUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
     }
 }

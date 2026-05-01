@@ -1,26 +1,22 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth.js';
-import loginConfig from './loginConfig.json';
-import LoginHeader from './components/LoginHeader.jsx';
-import AccessRestrictedAlert from './components/AccessRestrictedAlert.jsx';
-import LoginForm from './components/LoginForm.jsx';
-import PageFooter from './components/PageFooter.jsx';
+import { useAuth } from '../hooks/useAuth.js';
+import loginConfig from '../loginConfig.json';
+import LoginHeader from '../components/LoginHeader.jsx';
+import AccessRestrictedAlert from '../components/AccessRestrictedAlert.jsx';
+import LoginForm from '../components/LoginForm.jsx';
+import PageFooter from '../components/PageFooter.jsx';
 import './LoginPage.css';
 
 function validate(values, rules) {
   const errors = {};
 
-  const u = values.username.trim();
-  const uRules = rules.username;
-  if (u.length === 0) {
-    errors.username = uRules.messages.required;
-  } else if (u.length < uRules.minLength) {
-    errors.username = uRules.messages.minLength;
-  } else if (u.length > uRules.maxLength) {
-    errors.username = uRules.messages.maxLength;
-  } else if (!new RegExp(uRules.pattern).test(u)) {
-    errors.username = uRules.messages.pattern;
+  const email = values.email.trim();
+  const emailRules = rules.email;
+  if (email.length === 0) {
+    errors.email = emailRules.messages.required;
+  } else if (!new RegExp(emailRules.pattern).test(email)) {
+    errors.email = emailRules.messages.pattern;
   }
 
   const pRules = rules.password;
@@ -37,7 +33,7 @@ function LoginPage() {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [keepActive, setKeepActive] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -50,20 +46,20 @@ function LoginPage() {
     event.preventDefault();
     setErrorMessage('');
 
-    const errors = validate({ username, password }, config.validation);
+    const errors = validate({ email, password }, config.validation);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       return;
     }
 
     const result = await login({
-      username: username.trim(),
+      email: email.trim(),
       password,
     });
 
     if (result.success) {
       setIsAccessRestricted(false);
-      navigate('/dashboard');
+      navigate('/bugs');
       return;
     }
 
@@ -91,13 +87,13 @@ function LoginPage() {
 
         <LoginForm
           config={config}
-          username={username}
+          email={email}
           password={password}
           keepActive={keepActive}
           isLoading={isLoading}
           fieldErrors={fieldErrors}
           errorMessage={errorMessage}
-          onUsernameChange={setUsername}
+          onEmailChange={setEmail}
           onPasswordChange={setPassword}
           onKeepActiveChange={setKeepActive}
           onSubmit={handleSubmit}

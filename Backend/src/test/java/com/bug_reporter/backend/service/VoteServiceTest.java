@@ -113,23 +113,29 @@ class VoteServiceTest {
 
     @Test
     void getBugVoteCount() {
+        Vote upvote = new Vote();
+        upvote.setType(VoteType.UPVOTE);
         when(bugRepository.existsById(10L)).thenReturn(true);
-        when(voteRepository.getBugVoteCount(10L)).thenReturn(1);
+        when(voteRepository.findByBugId(10L)).thenReturn(List.of(upvote));
 
         Integer count = voteService.getBugVoteCount(10L);
 
         assertEquals(1, count);
-        verify(voteRepository, times(1)).getBugVoteCount(10L);
+        verify(voteRepository, times(1)).findByBugId(10L);
     }
 
     @Test
     void getCommentVoteCount() {
+        Vote upvote = new Vote();
+        upvote.setType(VoteType.UPVOTE);
+        Vote downvote = new Vote();
+        downvote.setType(VoteType.DOWNVOTE);
         when(commentRepository.existsById(100L)).thenReturn(true);
-        when(voteRepository.getCommentVoteCount(100L)).thenReturn(3);
+        when(voteRepository.findByCommentId(100L)).thenReturn(List.of(upvote, upvote, upvote, downvote));
 
         Integer count = voteService.getCommentVoteCount(100L);
 
-        assertEquals(3, count);
-        verify(voteRepository, times(1)).getCommentVoteCount(100L);
+        assertEquals(2, count);
+        verify(voteRepository, times(1)).findByCommentId(100L);
     }
 }
