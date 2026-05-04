@@ -2,6 +2,7 @@ package com.bug_reporter.backend.controller;
 
 import com.bug_reporter.backend.dto.request.TagCreateRequest;
 import com.bug_reporter.backend.dto.response.TagSummary;
+import com.bug_reporter.backend.dto.response.TagUsageResponse;
 import com.bug_reporter.backend.service.TagService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,12 @@ public class TagController {
     @GetMapping
     public ResponseEntity<List<TagSummary>> getAllTags() {
         return ResponseEntity.ok(tagService.findAllTags());
+        //200 OK
+    }
+
+    @GetMapping("/usage")
+    public ResponseEntity<List<TagUsageResponse>> getTagUsage() {
+        return ResponseEntity.ok(tagService.findTagUsage());
         //200 OK
     }
 

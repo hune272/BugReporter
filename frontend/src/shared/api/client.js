@@ -1,61 +1,75 @@
+import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants.js';
 
-async function safeReadError(response) {
-  try {
-    const data = await response.clone().json();
-    return data?.message || data?.error || null;
-  } catch {
-    try {
-      const text = await response.text();
-      return text || null;
-    } catch {
-      return null;
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: {
+    Accept: 'application/json',
+  },
+});
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (shouldClearAuthSession(error)) {
+      const status = error?.response?.status;
+      window.dispatchEvent(new CustomEvent('auth:unauthorized', {
+        detail: {
+          status,
+          message: getErrorMessage(error),
+        },
+      }));
     }
+    return Promise.reject(error);
+  },
+);
+
+function shouldClearAuthSession(error) {
+  const status = error?.response?.status;
+  const url = error?.config?.url ?? '';
+  const message = getErrorMessage(error).toLowerCase();
+
+  if (url.includes('/api/auth/login')) {
+    return false;
   }
+
+  return status === 401 || (status === 403 && message.includes('banned'));
 }
 
-async function safeReadJson(response) {
-  try {
-    return await response.json();
-  } catch {
-    return undefined;
+function getErrorMessage(error) {
+  const data = error?.response?.data;
+
+  if (typeof data === 'string') {
+    return data;
   }
+
+  return data?.message || data?.error || error?.message || 'Network error.';
 }
 
-// Wraps fetch so every API call shares: same-origin base URL,
-// session-cookie credentials, JSON Accept header, and a normalized
-// { success, status, data?, error? } result instead of throwing.
+// Keeps API calls normalized as { success, status, data?, error? },
+// while Axios handles credentials, base URL, JSON parsing, and errors.
 export async function apiRequest(path, { method = 'GET', body, headers } = {}) {
   try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const response = await apiClient.request({
+      url: path,
       method,
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        ...headers,
-      },
-      body,
+      data: body,
+      headers,
     });
 
-    if (response.ok) {
-      return {
-        success: true,
-        status: response.status,
-        data: await safeReadJson(response),
-      };
-    }
-
-    const message = await safeReadError(response);
     return {
-      success: false,
+      success: true,
       status: response.status,
-      error: message || `Request failed (HTTP ${response.status}).`,
+      data: response.data,
     };
-  } catch (networkError) {
+  } catch (error) {
+    const status = error?.response?.status ?? 0;
+
     return {
       success: false,
-      status: 0,
-      error: networkError?.message || 'Network error.',
+      status,
+      error: getErrorMessage(error) || `Request failed (HTTP ${status}).`,
     };
   }
 }

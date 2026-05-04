@@ -1,0 +1,47 @@
+.bug-report-field {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.bug-report-field span {
+  color: #526b8c;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bug-report-field input,
+.bug-report-field textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #dbe3ee;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #0f2543;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+}
+
+.bug-report-field input {
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.bug-report-field textarea {
+  min-height: 190px;
+  resize: vertical;
+  padding: 12px;
+  line-height: 1.5;
+}
+
+.bug-report-field input:focus,
+.bug-report-field textarea:focus {
+  border-color: #0f2543;
+  box-shadow: 0 0 0 3px rgba(15, 37, 67, 0.08);
+}

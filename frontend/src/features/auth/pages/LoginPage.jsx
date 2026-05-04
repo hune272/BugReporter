@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import loginConfig from '../loginConfig.json';
 import LoginHeader from '../components/LoginHeader.jsx';
@@ -30,7 +30,7 @@ function validate(values, rules) {
 }
 
 function LoginPage() {
-  const { login, isLoading } = useAuth();
+  const { user, login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -41,6 +41,10 @@ function LoginPage() {
   const [isAccessRestricted, setIsAccessRestricted] = useState(false);
 
   const config = useMemo(() => loginConfig, []);
+
+  if (!isLoading && user) {
+    return <Navigate to="/bugs" replace />;
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
