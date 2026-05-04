@@ -1,9 +1,13 @@
 package com.bug_reporter.backend.controller;
 
-import com.bug_reporter.backend.model.User;
+import com.bug_reporter.backend.dto.request.UserUpdateRequest;
+import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,18 +25,13 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers(
+    public ResponseEntity<List<UserResponse>> getAllUsers(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Integer limit) {
         if (search != null || limit != null) {
-            return ResponseEntity.ok(userService.getUsers(search, limit));
+            return ResponseEntity.ok(userService.getUserResponses(search, limit));
         }
-        return ResponseEntity.ok(userService.getAllUsers());
-        //HTTP 200 OK
-    }
-
-    public ResponseEntity<List<User>> getAllUsers() {
-        return getAllUsers(null, null);
+        return ResponseEntity.ok(userService.getAllUserResponses());
     }
 
     @GetMapping("/scores")
@@ -50,16 +49,24 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-        //200 OK or 404 Not Found
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+        return userService.getUserResponseById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id,
+                                        @Valid @RequestBody UserUpdateRequest user,
+                                        @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+
         try{
-            User updatedUser = userService.updateUser(id, user);
+            UserResponse updatedUser = userService.updateUser(id, user, requesterId);
             return ResponseEntity.ok(updatedUser);
+        }
+        catch (SecurityException e){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         }
         catch (RuntimeException e){
             return ResponseEntity.notFound().build();
@@ -67,13 +74,52 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<?> deleteUser(@PathVariable Long id, @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+
         try{
-            userService.deleteUser(id);
+            userService.deleteUser(id, requesterId);
             return ResponseEntity.noContent().build();
+        }
+        catch (SecurityException e){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         }
         catch (RuntimeException e){
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{id}/ban")
+    public ResponseEntity<?> banUser(@PathVariable Long id, @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+
+        try {
+            return ResponseEntity.ok(userService.banUser(id, requesterId));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/unban")
+    public ResponseEntity<?> unbanUser(@PathVariable Long id, @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+
+        try {
+            return ResponseEntity.ok(userService.unbanUser(id, requesterId));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         }
     }
 

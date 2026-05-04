@@ -1,7 +1,9 @@
 package com.bug_reporter.backend.controller;
 
-import com.bug_reporter.backend.model.Tag;
+import com.bug_reporter.backend.dto.request.TagCreateRequest;
+import com.bug_reporter.backend.dto.response.TagSummary;
 import com.bug_reporter.backend.service.TagService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,15 +25,15 @@ public class TagController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Tag>> getAllTags() {
-        return ResponseEntity.ok(tagService.findAll());
+    public ResponseEntity<List<TagSummary>> getAllTags() {
+        return ResponseEntity.ok(tagService.findAllTags());
         //200 OK
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getTagById(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(tagService.findById(id));
+            return ResponseEntity.ok(tagService.findTagById(id));
             //200 OK
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
@@ -41,7 +43,7 @@ public class TagController {
 
     @GetMapping("/search")
     public ResponseEntity<?> getTagByName(@RequestParam String name) {
-        Tag tag = tagService.findByName(name);
+        TagSummary tag = tagService.findTagByName(name);
         if (tag == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Tag not found with name: " + name));
             //404 Not Found
@@ -51,9 +53,9 @@ public class TagController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addTag(@RequestBody Tag tag) {
+    public ResponseEntity<?> addTag(@Valid @RequestBody TagCreateRequest request) {
         try {
-            Tag created = tagService.createTag(tag);
+            TagSummary created = tagService.createTag(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
             //201 Created
         } catch (IllegalArgumentException e) {
@@ -66,9 +68,9 @@ public class TagController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTag(@PathVariable Long id, @RequestBody Tag updatedTag) {
+    public ResponseEntity<?> updateTag(@PathVariable Long id, @Valid @RequestBody TagCreateRequest request) {
         try {
-            Tag updated = tagService.updateTag(id, updatedTag);
+            TagSummary updated = tagService.updateTag(id, request);
             return ResponseEntity.ok(updated);
             //200 OK
         } catch (IllegalArgumentException e) {

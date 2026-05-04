@@ -1,5 +1,9 @@
 package com.bug_reporter.backend.controller;
 
+import com.bug_reporter.backend.dto.request.CommentCreateRequest;
+import com.bug_reporter.backend.dto.request.CommentUpdateRequest;
+import com.bug_reporter.backend.dto.response.CommentResponse;
+import com.bug_reporter.backend.dto.mapper.CommentMapper;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.service.CommentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +29,7 @@ class CommentControllerTest {
     private CommentController commentController;
 
     private Comment comment;
+    private CommentResponse commentResponse;
 
     @BeforeEach
     void setUp() {
@@ -32,65 +37,69 @@ class CommentControllerTest {
         comment.setId(1L);
         comment.setComment("Initial comment");
         comment.setImageUrl("image.png");
+        commentResponse = CommentMapper.toResponse(comment);
     }
 
     @Test
     void getAllComments() {
-        when(commentService.findAll()).thenReturn(List.of(comment));
-        ResponseEntity<List<Comment>> result = commentController.getAllComments();
+        when(commentService.findAllComments()).thenReturn(List.of(commentResponse));
+        ResponseEntity<List<CommentResponse>> result = commentController.getAllComments();
         assertEquals(200, result.getStatusCode().value());
         assertEquals(1, result.getBody().size());
     }
 
     @Test
     void getCommentById() {
-        when(commentService.findById(1L)).thenReturn(comment);
+        when(commentService.findCommentById(1L)).thenReturn(commentResponse);
         ResponseEntity<?> result = commentController.getCommentById(1L);
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void getCommentById_notFound() {
-        when(commentService.findById(99L)).thenThrow(new RuntimeException("Not found"));
+        when(commentService.findCommentById(99L)).thenThrow(new RuntimeException("Not found"));
         ResponseEntity<?> result = commentController.getCommentById(99L);
         assertEquals(404, result.getStatusCode().value());
     }
 
     @Test
     void getCommentsByBugId() {
-        when(commentService.getCommentsByBugId(2L)).thenReturn(List.of(comment));
-        ResponseEntity<List<Comment>> result = commentController.getCommentsByBugId(2L);
+        when(commentService.getCommentResponsesByBugId(2L)).thenReturn(List.of(commentResponse));
+        ResponseEntity<List<CommentResponse>> result = commentController.getCommentsByBugId(2L);
         assertEquals(200, result.getStatusCode().value());
         assertEquals(1, result.getBody().size());
     }
 
     @Test
     void addComment() {
-        when(commentService.save(comment)).thenReturn(comment);
-        ResponseEntity<?> result = commentController.addComment(comment);
+        CommentCreateRequest request = new CommentCreateRequest("Initial comment", "image.png", 2L);
+
+        when(commentService.createComment(request, 1L)).thenReturn(commentResponse);
+        ResponseEntity<?> result = commentController.addComment(request, 1L);
         assertEquals(201, result.getStatusCode().value());
     }
 
     @Test
     void updateComment() {
-        Comment updated = new Comment();
-        updated.setComment("Updated");
-        when(commentService.updateComment(eq(1L), any(Comment.class))).thenReturn(updated);
-        ResponseEntity<?> result = commentController.updateComment(1L, updated);
+        CommentUpdateRequest request = new CommentUpdateRequest("Updated", null);
+        CommentResponse updated = new CommentResponse(1L, "Updated", null, null, null, null, 0);
+
+        when(commentService.updateComment(1L, request, 1L)).thenReturn(updated);
+        ResponseEntity<?> result = commentController.updateComment(1L, request, 1L);
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void deleteComment() {
-        doNothing().when(commentService).deleteComment(1L);
-        ResponseEntity<?> result = commentController.deleteComment(1L);
+        doNothing().when(commentService).deleteComment(1L, 1L);
+        ResponseEntity<?> result = commentController.deleteComment(1L, 1L);
         assertEquals(204, result.getStatusCode().value());
     }
 
     @Test
     void deleteComment_notFound() {
-        doThrow(new RuntimeException("Not found")).when(commentService).deleteComment(99L);
-        ResponseEntity<?> result = commentController.deleteComment(99L);
+        doThrow(new RuntimeException("Not found")).when(commentService).deleteComment(99L, 1L);
+        ResponseEntity<?> result = commentController.deleteComment(99L, 1L);
         assertEquals(404, result.getStatusCode().value());
     }
 }

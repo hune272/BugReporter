@@ -1,5 +1,8 @@
 package com.bug_reporter.backend.controller;
 
+import com.bug_reporter.backend.dto.request.UserUpdateRequest;
+import com.bug_reporter.backend.dto.response.UserResponse;
+import com.bug_reporter.backend.dto.mapper.UserMapper;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.UserRole;
 import com.bug_reporter.backend.service.UserService;
@@ -12,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -27,6 +29,7 @@ public class UserControllerTest {
     private UserController userController;
 
     private User testUser;
+    private UserResponse testUserResponse;
 
     @BeforeEach
     void setUp() {
@@ -35,79 +38,82 @@ public class UserControllerTest {
         testUser.setUsername("testUser");
         testUser.setEmail("test@example.com");
         testUser.setRole(UserRole.USER);
+        testUserResponse = UserMapper.toResponse(testUser);
     }
 
     @Test
     void getAllUsers() {
-        when(userService.getAllUsers()).thenReturn(List.of(testUser));
+        when(userService.getAllUserResponses()).thenReturn(List.of(testUserResponse));
 
-        ResponseEntity<List<User>> result = userController.getAllUsers();
+        ResponseEntity<List<UserResponse>> result = userController.getAllUsers(null, null);
 
         assertEquals(200, result.getStatusCode().value());
         assertNotNull(result.getBody());
         assertEquals(1, result.getBody().size());
-        verify(userService, times(1)).getAllUsers();
+        verify(userService, times(1)).getAllUserResponses();
     }
 
     @Test
     void getUserById() {
-        when(userService.getUserById(1L)).thenReturn(Optional.of(testUser));
+        when(userService.getUserResponseById(1L)).thenReturn(java.util.Optional.of(testUserResponse));
 
-        ResponseEntity<User> result = userController.getUserById(1L);
+        ResponseEntity<UserResponse> result = userController.getUserById(1L);
 
         assertEquals(200, result.getStatusCode().value());
         assertNotNull(result.getBody());
-        assertEquals("testUser", result.getBody().getUsername());
-        verify(userService, times(1)).getUserById(1L);
+        assertEquals("testUser", result.getBody().username());
+        verify(userService, times(1)).getUserResponseById(1L);
     }
 
     @Test
     void getUserById_notFound() {
-        when(userService.getUserById(99L)).thenReturn(Optional.empty());
+        when(userService.getUserResponseById(99L)).thenReturn(java.util.Optional.empty());
 
-        ResponseEntity<User> result = userController.getUserById(99L);
+        ResponseEntity<UserResponse> result = userController.getUserById(99L);
 
         assertEquals(404, result.getStatusCode().value());
     }
 
     @Test
     void updateUser() {
-        User updatedUser = new User();
-        updatedUser.setUsername("updatedName");
+        UserUpdateRequest request = new UserUpdateRequest("updatedName", "updated@example.com", UserRole.USER, null);
+        UserResponse updatedUser = new UserResponse(1L, "updatedName", "updated@example.com", UserRole.USER, false);
 
-        when(userService.updateUser(1L, updatedUser)).thenReturn(updatedUser);
+        when(userService.updateUser(1L, request, 1L)).thenReturn(updatedUser);
 
-        ResponseEntity<User> result = userController.updateUser(1L, updatedUser);
+        ResponseEntity<?> result = userController.updateUser(1L, request, 1L);
 
         assertEquals(200, result.getStatusCode().value());
-        assertEquals("updatedName", result.getBody().getUsername());
-        verify(userService, times(1)).updateUser(1L, updatedUser);
+        assertEquals("updatedName", ((UserResponse) result.getBody()).username());
+        verify(userService, times(1)).updateUser(1L, request, 1L);
     }
 
     @Test
     void updateUser_notFound() {
-        when(userService.updateUser(eq(99L), any(User.class))).thenThrow(new RuntimeException("User not found"));
+        UserUpdateRequest request = new UserUpdateRequest("testUser", "test@example.com", UserRole.USER, null);
 
-        ResponseEntity<User> result = userController.updateUser(99L, testUser);
+        when(userService.updateUser(99L, request, 1L)).thenThrow(new RuntimeException("User not found"));
+
+        ResponseEntity<?> result = userController.updateUser(99L, request, 1L);
 
         assertEquals(404, result.getStatusCode().value());
     }
 
     @Test
     void deleteUser() {
-        doNothing().when(userService).deleteUser(1L);
+        doNothing().when(userService).deleteUser(1L, 1L);
 
-        ResponseEntity<Void> result = userController.deleteUser(1L);
+        ResponseEntity<?> result = userController.deleteUser(1L, 1L);
 
         assertEquals(204, result.getStatusCode().value());
-        verify(userService, times(1)).deleteUser(1L);
+        verify(userService, times(1)).deleteUser(1L, 1L);
     }
 
     @Test
     void deleteUser_notFound() {
-        doThrow(new RuntimeException("User not found")).when(userService).deleteUser(99L);
+        doThrow(new RuntimeException("User not found")).when(userService).deleteUser(99L, 1L);
 
-        ResponseEntity<Void> result = userController.deleteUser(99L);
+        ResponseEntity<?> result = userController.deleteUser(99L, 1L);
 
         assertEquals(404, result.getStatusCode().value());
     }

@@ -1,5 +1,8 @@
 package com.bug_reporter.backend.service;
 
+import com.bug_reporter.backend.dto.request.LoginRequest;
+import com.bug_reporter.backend.dto.request.RegisterRequest;
+import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.UserRole;
 import com.bug_reporter.backend.repository.UserRepository;
@@ -27,9 +30,6 @@ public class AuthServiceTest {
 
     @Mock
     private UserRepository userRepository;
-
-    @Mock
-    private UserService userService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -61,29 +61,31 @@ public class AuthServiceTest {
     @Test
     void register() {
         when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
-        when(userService.createUser(any(User.class))).thenReturn(testUser);
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(userRepository.existsByUsername("testUser")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        User result = authService.register("testUser", "test@example.com", "password123");
+        UserResponse result = authService.register(new RegisterRequest("testUser", "test@example.com", "password123"));
 
         assertNotNull(result);
-        assertEquals("testUser", result.getUsername());
-        assertEquals("test@example.com", result.getEmail());
-        verify(userService, times(1)).createUser(any(User.class));
+        assertEquals("testUser", result.username());
+        assertEquals("test@example.com", result.email());
+        verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
     void register_nullUsername() {
-        assertThrows(RuntimeException.class, () -> authService.register(null, "test@example.com", "password"));
+        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest(null, "test@example.com", "password")));
     }
 
     @Test
     void register_emptyEmail() {
-        assertThrows(RuntimeException.class, () -> authService.register("user", "", "password"));
+        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest("user", "", "password")));
     }
 
     @Test
     void register_emptyPassword() {
-        assertThrows(RuntimeException.class, () -> authService.register("user", "test@example.com", ""));
+        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest("user", "test@example.com", "")));
     }
 
     @Test
@@ -92,10 +94,10 @@ public class AuthServiceTest {
         when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
         when(request.getSession(true)).thenReturn(session);
 
-        User result = authService.login("test@example.com", "password123", request, response);
+        UserResponse result = authService.login(new LoginRequest("test@example.com", "password123"), request, response);
 
         assertNotNull(result);
-        assertEquals("test@example.com", result.getEmail());
+        assertEquals("test@example.com", result.email());
         verify(session).setAttribute("userId", 1L);
         verify(session).setAttribute("userEmail", "test@example.com");
         verify(session).setAttribute("userRole", "USER");
@@ -106,7 +108,7 @@ public class AuthServiceTest {
         when(userRepository.findByEmail("wrong@example.com")).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class,
-                () -> authService.login("wrong@example.com", "password", request, response));
+                () -> authService.login(new LoginRequest("wrong@example.com", "password"), request, response));
     }
 
     @Test
@@ -115,7 +117,7 @@ public class AuthServiceTest {
         when(passwordEncoder.matches("wrongPass", "encodedPassword")).thenReturn(false);
 
         assertThrows(RuntimeException.class,
-                () -> authService.login("test@example.com", "wrongPass", request, response));
+                () -> authService.login(new LoginRequest("test@example.com", "wrongPass"), request, response));
     }
 
     @Test

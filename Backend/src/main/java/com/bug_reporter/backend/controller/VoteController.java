@@ -1,10 +1,14 @@
 package com.bug_reporter.backend.controller;
 
-import com.bug_reporter.backend.model.Vote;
+import com.bug_reporter.backend.dto.request.VoteBugRequest;
+import com.bug_reporter.backend.dto.request.VoteCommentRequest;
+import com.bug_reporter.backend.dto.response.VoteResponse;
 import com.bug_reporter.backend.service.VoteService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,15 +27,19 @@ public class VoteController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Vote>> findAll() {
-        return ResponseEntity.ok(voteService.findAll());
+    public ResponseEntity<List<VoteResponse>> findAll() {
+        return ResponseEntity.ok(voteService.findAllVotes());
         //200 OK
     }
 
     @PostMapping("/bug")
-    public ResponseEntity<?> voteBug(@RequestBody Vote vote) {
+    public ResponseEntity<?> voteBug(@Valid @RequestBody VoteBugRequest request,
+                                     @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
         try {
-            Vote created = voteService.voteBug(vote);
+            VoteResponse created = voteService.voteBug(request, userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
             //201 Created
         } catch (SecurityException e) {
@@ -47,9 +55,13 @@ public class VoteController {
     }
 
     @PostMapping("/comment")
-    public ResponseEntity<?> voteComment(@RequestBody Vote vote) {
+    public ResponseEntity<?> voteComment(@Valid @RequestBody VoteCommentRequest request,
+                                         @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
         try {
-            Vote created = voteService.voteComment(vote);
+            VoteResponse created = voteService.voteComment(request, userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
             //201 Created
         } catch (SecurityException e) {

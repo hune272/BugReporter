@@ -1,5 +1,10 @@
 package com.bug_reporter.backend.controller;
 
+import com.bug_reporter.backend.dto.request.BugCreateRequest;
+import com.bug_reporter.backend.dto.request.BugUpdateRequest;
+import com.bug_reporter.backend.dto.response.BugResponse;
+import com.bug_reporter.backend.dto.mapper.BugMapper;
+import com.bug_reporter.backend.dto.response.PageResponse;
 import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.BugStatus;
@@ -27,6 +32,7 @@ class BugControllerTest {
     private BugController bugController;
 
     private Bug testBug;
+    private BugResponse testBugResponse;
 
     @BeforeEach
     void setUp() {
@@ -40,19 +46,39 @@ class BugControllerTest {
         testBug.setText("Button not working");
         testBug.setStatus(BugStatus.RECEIVED);
         testBug.setAuthor(author);
+        testBugResponse = BugMapper.toResponse(testBug);
     }
 
     @Test
     void getBugs() {
-        when(bugService.getFilteredBugs("UI", 1L, null)).thenReturn(List.of(testBug));
-        ResponseEntity<List<Bug>> result = bugController.getBugs("UI", 1L, null);
+        PageResponse<BugResponse> page = new PageResponse<>(
+                List.of(testBugResponse),
+                1,
+                1,
+                10,
+                0,
+                true,
+                true
+        );
+
+        when(bugService.getFilteredBugs("UI", 1L, null, 0, 10))
+                .thenReturn(page);
+
+        ResponseEntity<PageResponse<BugResponse>> result =
+                bugController.getBugs("UI", 1L, null, 0, 10);
+
         assertEquals(200, result.getStatusCode().value());
-        assertEquals(1, result.getBody().size());
+        assertNotNull(result.getBody());
+        assertEquals(1, result.getBody().content().size());
+        assertEquals("UI Error", result.getBody().content().getFirst().title());
+
+        verify(bugService, times(1))
+                .getFilteredBugs("UI", 1L, null, 0, 10);
     }
 
     @Test
     void getBugById() {
-        when(bugService.findById(100L)).thenReturn(testBug);
+        when(bugService.findById(100L)).thenReturn(testBugResponse);
         ResponseEntity<?> result = bugController.getBugById(100L);
         assertEquals(200, result.getStatusCode().value());
     }
@@ -66,29 +92,36 @@ class BugControllerTest {
 
     @Test
     void createBug() {
-        when(bugService.save(any(Bug.class))).thenReturn(testBug);
-        ResponseEntity<?> result = bugController.createBug(testBug);
+        BugCreateRequest request = new BugCreateRequest("UI Error", "Button not working", null, List.of(10L));
+
+        when(bugService.create(request, 1L)).thenReturn(testBugResponse);
+        ResponseEntity<?> result = bugController.createBug(request, 1L);
         assertEquals(201, result.getStatusCode().value());
     }
 
     @Test
     void updateBug() {
-        when(bugService.updateBug(eq(100L), any(Bug.class), eq(1L))).thenReturn(testBug);
-        ResponseEntity<?> result = bugController.updateBug(100L, testBug, 1L);
+        BugUpdateRequest request = new BugUpdateRequest("UI Error", "Button not working", null, List.of(10L));
+
+        when(bugService.updateBug(eq(100L), eq(request), eq(1L))).thenReturn(testBugResponse);
+        ResponseEntity<?> result = bugController.updateBug(100L, request, 1L);
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void updateBug_unauthorized() {
-        ResponseEntity<?> result = bugController.updateBug(100L, testBug, null);
+        BugUpdateRequest request = new BugUpdateRequest("UI Error", "Button not working", null, List.of(10L));
+
+        ResponseEntity<?> result = bugController.updateBug(100L, request, null);
         assertEquals(401, result.getStatusCode().value());
     }
 
     @Test
     void updateBug_forbidden() {
-        when(bugService.updateBug(eq(100L), any(Bug.class), eq(99L)))
-                .thenThrow(new SecurityException("Not allowed"));
-        ResponseEntity<?> result = bugController.updateBug(100L, testBug, 99L);
+        BugUpdateRequest request = new BugUpdateRequest("UI Error", "Button not working", null, List.of(10L));
+
+        when(bugService.updateBug(eq(100L), eq(request), eq(99L))).thenThrow(new SecurityException("Not allowed"));
+        ResponseEntity<?> result = bugController.updateBug(100L, request, 99L);
         assertEquals(403, result.getStatusCode().value());
     }
 

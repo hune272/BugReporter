@@ -36,7 +36,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
-    //later on the JsonIgnore must be removed, maybe:)
+
+    @Column(nullable = false)
+    private boolean banned = false;
     @JsonIgnore
     //Relationships
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -68,6 +70,7 @@ public class User {
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 ", role=" + role +
+                ", banned=" + banned +
                 '}';
     }
 }

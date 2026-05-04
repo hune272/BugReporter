@@ -1,5 +1,9 @@
 package com.bug_reporter.backend.service;
 
+import com.bug_reporter.backend.dto.mapper.UserMapper;
+import com.bug_reporter.backend.dto.request.LoginRequest;
+import com.bug_reporter.backend.dto.request.RegisterRequest;
+import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.UserRole;
 import com.bug_reporter.backend.repository.UserRepository;
@@ -21,48 +25,50 @@ import java.util.List;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AuthService(UserRepository userRepository, UserService userService, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.userService = userService;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User register(String username, String email, String password) {
-        if (username == null || username.trim().isEmpty()) {
+    public UserResponse register(RegisterRequest request) {
+        if (request.username() == null || request.username().trim().isEmpty()) {
             throw new RuntimeException("Username is required");
         }
-        if (email == null || email.trim().isEmpty()) {
+        if (request.email() == null || request.email().trim().isEmpty()) {
             throw new RuntimeException("Email is required");
         }
-        if (password == null || password.trim().isEmpty()) {
+        if (request.password() == null || request.password().trim().isEmpty()) {
             throw new RuntimeException("Password is required");
+        }
+        if (userRepository.existsByEmail(request.email())) {
+            throw new RuntimeException("Email already exists" + request.email());
+        }
+        if (userRepository.existsByUsername(request.username())) {
+            throw new RuntimeException("Username already exists" + request.username());
         }
 
         User user = new User();
-        user.setUsername(username.trim());
-        user.setEmail(email.trim());
-        user.setPassword(passwordEncoder.encode(password));
+        user.setUsername(request.username().trim());
+        user.setEmail(request.email().trim());
+        user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(UserRole.USER);
-        return userService.createUser(user);
+        return UserMapper.toResponse(userRepository.save(user));
     }
 
-    public User login(String email, String password, HttpServletRequest request, HttpServletResponse response) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+    public UserResponse login(LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response) {
+        User user = userRepository.findByEmail(loginRequest.email()).orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
         }
+        if (user.isBanned()) {
+            throw new IllegalStateException("Your account has been banned");
+        }
 
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                user.getId(),
-                null,
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user.getId(), null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authToken);
@@ -74,7 +80,7 @@ public class AuthService {
         request.getSession(true).setAttribute("userEmail", user.getEmail());
         request.getSession(true).setAttribute("userRole", user.getRole().name());
 
-        return user;
+        return UserMapper.toResponse(user);
     }
 
     public void logout(HttpServletRequest request) {
@@ -84,8 +90,8 @@ public class AuthService {
         }
     }
 
-    public User getCurrentUser(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    public UserResponse getCurrentUser(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        return UserMapper.toResponse(user);
     }
 }

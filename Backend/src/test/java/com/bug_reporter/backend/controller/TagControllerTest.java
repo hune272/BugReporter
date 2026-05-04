@@ -1,5 +1,8 @@
 package com.bug_reporter.backend.controller;
 
+import com.bug_reporter.backend.dto.request.TagCreateRequest;
+import com.bug_reporter.backend.dto.response.TagSummary;
+import com.bug_reporter.backend.dto.mapper.TagMapper;
 import com.bug_reporter.backend.model.Tag;
 import com.bug_reporter.backend.service.TagService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,77 +28,86 @@ class TagControllerTest {
     private TagController tagController;
 
     private Tag tag;
+    private TagSummary tagSummary;
 
     @BeforeEach
     void setUp() {
         tag = new Tag();
         tag.setId(1L);
         tag.setName("backend");
+        tagSummary = TagMapper.toSummary(tag);
     }
 
     @Test
     void getAllTags() {
-        when(tagService.findAll()).thenReturn(List.of(tag));
-        ResponseEntity<List<Tag>> result = tagController.getAllTags();
+        when(tagService.findAllTags()).thenReturn(List.of(tagSummary));
+        ResponseEntity<List<TagSummary>> result = tagController.getAllTags();
         assertEquals(200, result.getStatusCode().value());
         assertEquals(1, result.getBody().size());
     }
 
     @Test
     void getTagById() {
-        when(tagService.findById(1L)).thenReturn(tag);
+        when(tagService.findTagById(1L)).thenReturn(tagSummary);
         ResponseEntity<?> result = tagController.getTagById(1L);
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void getTagById_notFound() {
-        when(tagService.findById(99L)).thenThrow(new RuntimeException("Tag not found"));
+        when(tagService.findTagById(99L)).thenThrow(new RuntimeException("Tag not found"));
         ResponseEntity<?> result = tagController.getTagById(99L);
         assertEquals(404, result.getStatusCode().value());
     }
 
     @Test
     void getTagByName() {
-        when(tagService.findByName("backend")).thenReturn(tag);
+        when(tagService.findTagByName("backend")).thenReturn(tagSummary);
         ResponseEntity<?> result = tagController.getTagByName("backend");
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void getTagByName_notFound() {
-        when(tagService.findByName("nonexistent")).thenReturn(null);
+        when(tagService.findTagByName("nonexistent")).thenReturn(null);
         ResponseEntity<?> result = tagController.getTagByName("nonexistent");
         assertEquals(404, result.getStatusCode().value());
     }
 
     @Test
     void addTag() {
-        when(tagService.createTag(any(Tag.class))).thenReturn(tag);
-        ResponseEntity<?> result = tagController.addTag(tag);
+        TagCreateRequest request = new TagCreateRequest("backend");
+
+        when(tagService.createTag(request)).thenReturn(tagSummary);
+        ResponseEntity<?> result = tagController.addTag(request);
         assertEquals(201, result.getStatusCode().value());
     }
 
     @Test
     void addTag_conflict() {
-        when(tagService.createTag(any(Tag.class))).thenThrow(new IllegalStateException("Exists"));
-        ResponseEntity<?> result = tagController.addTag(tag);
+        TagCreateRequest request = new TagCreateRequest("backend");
+
+        when(tagService.createTag(request)).thenThrow(new IllegalStateException("Exists"));
+        ResponseEntity<?> result = tagController.addTag(request);
         assertEquals(409, result.getStatusCode().value());
     }
 
     @Test
     void updateTag() {
-        Tag updatedTag = new Tag();
-        updatedTag.setName("frontend");
-        when(tagService.updateTag(eq(1L), any(Tag.class))).thenReturn(updatedTag);
-        ResponseEntity<?> result = tagController.updateTag(1L, updatedTag);
+        TagCreateRequest request = new TagCreateRequest("frontend");
+        TagSummary updatedTag = new TagSummary(1L, "frontend");
+
+        when(tagService.updateTag(1L, request)).thenReturn(updatedTag);
+        ResponseEntity<?> result = tagController.updateTag(1L, request);
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void updateTag_notFound() {
-        when(tagService.updateTag(eq(99L), any(Tag.class))).thenThrow(new RuntimeException("Not found"));
-        ResponseEntity<?> result = tagController.updateTag(99L, tag);
+        TagCreateRequest request = new TagCreateRequest("backend");
+
+        when(tagService.updateTag(99L, request)).thenThrow(new RuntimeException("Not found"));
+        ResponseEntity<?> result = tagController.updateTag(99L, request);
         assertEquals(404, result.getStatusCode().value());
     }
 

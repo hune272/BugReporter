@@ -1,10 +1,14 @@
 package com.bug_reporter.backend.controller;
 
-import com.bug_reporter.backend.model.Comment;
+import com.bug_reporter.backend.dto.request.CommentCreateRequest;
+import com.bug_reporter.backend.dto.request.CommentUpdateRequest;
+import com.bug_reporter.backend.dto.response.CommentResponse;
 import com.bug_reporter.backend.service.CommentService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,15 +27,15 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Comment>> getAllComments() {
-        return ResponseEntity.ok(commentService.findAll());
+    public ResponseEntity<List<CommentResponse>> getAllComments() {
+        return ResponseEntity.ok(commentService.findAllComments());
         //200 OK
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getCommentById(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(commentService.findById(id));
+            return ResponseEntity.ok(commentService.findCommentById(id));
             //200 OK
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
@@ -40,15 +44,19 @@ public class CommentController {
     }
 
     @GetMapping("/bug/{bugId}")
-    public ResponseEntity<List<Comment>> getCommentsByBugId(@PathVariable Long bugId) {
-        return ResponseEntity.ok(commentService.getCommentsByBugId(bugId));
+    public ResponseEntity<List<CommentResponse>> getCommentsByBugId(@PathVariable Long bugId) {
+        return ResponseEntity.ok(commentService.getCommentResponsesByBugId(bugId));
         //200 OK
     }
 
     @PostMapping
-    public ResponseEntity<?> addComment(@RequestBody Comment comment) {
+    public ResponseEntity<?> addComment(@Valid @RequestBody CommentCreateRequest request,
+                                        @AuthenticationPrincipal Long authorId) {
+        if (authorId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
         try {
-            Comment created = commentService.save(comment);
+            CommentResponse created = commentService.createComment(request, authorId);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
             //201 Created
         } catch (RuntimeException e) {
@@ -58,10 +66,18 @@ public class CommentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateComment(@PathVariable Long id, @RequestBody Comment updatedComment) {
+    public ResponseEntity<?> updateComment(@PathVariable Long id,
+                                           @Valid @RequestBody CommentUpdateRequest request,
+                                           @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
         try {
-            return ResponseEntity.ok(commentService.updateComment(id, updatedComment));
+            return ResponseEntity.ok(commentService.updateComment(id, request, requesterId));
             //200 OK
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+            //403 Forbidden
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
             //404 Not Found
@@ -69,11 +85,18 @@ public class CommentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteComment(@PathVariable Long id) {
+    public ResponseEntity<?> deleteComment(@PathVariable Long id,
+                                           @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
         try {
-            commentService.deleteComment(id);
+            commentService.deleteComment(id, requesterId);
             return ResponseEntity.noContent().build();
             //204 No Content
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+            //403 Forbidden
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
             //404 Not Found

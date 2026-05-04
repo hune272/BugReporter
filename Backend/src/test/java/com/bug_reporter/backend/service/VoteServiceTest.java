@@ -1,5 +1,8 @@
 package com.bug_reporter.backend.service;
 
+import com.bug_reporter.backend.dto.request.VoteBugRequest;
+import com.bug_reporter.backend.dto.request.VoteCommentRequest;
+import com.bug_reporter.backend.dto.response.VoteResponse;
 import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.model.User;
@@ -69,45 +72,31 @@ class VoteServiceTest {
         testVote.setType(VoteType.UPVOTE);
         when(voteRepository.findAll()).thenReturn(List.of(testVote));
 
-        List<Vote> result = voteService.findAll();
+        List<VoteResponse> result = voteService.findAllVotes();
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(VoteType.UPVOTE, result.get(0).getType());
+        assertEquals(VoteType.UPVOTE, result.get(0).type());
     }
 
     @Test
     void voteBug() {
-        Vote vote = new Vote();
-        User user = new User();
-        user.setId(1L);
-        Bug bug = new Bug();
-        bug.setId(10L);
-        vote.setUser(user);
-        vote.setBug(bug);
-        vote.setType(VoteType.UPVOTE);
+        VoteBugRequest request = new VoteBugRequest(10L, VoteType.UPVOTE);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(bugRepository.findById(10L)).thenReturn(Optional.of(testBug));
 
-        voteService.voteBug(vote);
+        voteService.voteBug(request, 1L);
         verify(voteRepository, times(1)).save(any(Vote.class));
     }
 
     @Test
     void voteComment() {
-        Vote vote = new Vote();
-        User user = new User();
-        user.setId(1L);
-        Comment comment = new Comment();
-        comment.setId(100L);
-        vote.setUser(user);
-        vote.setComment(comment);
-        vote.setType(VoteType.DOWNVOTE);
+        VoteCommentRequest request = new VoteCommentRequest(100L, VoteType.DOWNVOTE);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(commentRepository.findById(100L)).thenReturn(Optional.of(testComment));
 
-        voteService.voteComment(vote);
+        voteService.voteComment(request, 1L);
         verify(voteRepository, times(1)).save(any(Vote.class));
     }
 

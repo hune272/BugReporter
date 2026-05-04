@@ -1,8 +1,9 @@
 package com.bug_reporter.backend.controller;
 
-import com.bug_reporter.backend.model.Bug;
-import com.bug_reporter.backend.model.Comment;
-import com.bug_reporter.backend.model.User;
+import com.bug_reporter.backend.dto.request.VoteBugRequest;
+import com.bug_reporter.backend.dto.request.VoteCommentRequest;
+import com.bug_reporter.backend.dto.response.VoteResponse;
+import com.bug_reporter.backend.dto.mapper.VoteMapper;
 import com.bug_reporter.backend.model.Vote;
 import com.bug_reporter.backend.model.enums.VoteType;
 import com.bug_reporter.backend.service.VoteService;
@@ -29,41 +30,39 @@ class VoteControllerTest {
     private VoteController voteController;
 
     private Vote testVote;
+    private VoteResponse testVoteResponse;
 
     @BeforeEach
     void setUp() {
         testVote = new Vote();
         testVote.setId(1L);
         testVote.setType(VoteType.UPVOTE);
+        testVoteResponse = VoteMapper.toResponse(testVote);
     }
 
     @Test
     void findAll() {
-        when(voteService.findAll()).thenReturn(List.of(testVote));
-        ResponseEntity<List<Vote>> result = voteController.findAll();
+        when(voteService.findAllVotes()).thenReturn(List.of(testVoteResponse));
+        ResponseEntity<List<VoteResponse>> result = voteController.findAll();
         assertEquals(200, result.getStatusCode().value());
         assertEquals(1, result.getBody().size());
     }
 
     @Test
     void voteBug() {
-        Vote inputVote = new Vote();
-        User user = new User(); user.setId(1L);
-        Bug bug = new Bug(); bug.setId(10L);
-        inputVote.setUser(user); inputVote.setBug(bug); inputVote.setType(VoteType.UPVOTE);
-        when(voteService.voteBug(any(Vote.class))).thenReturn(testVote);
-        ResponseEntity<?> result = voteController.voteBug(inputVote);
+        VoteBugRequest request = new VoteBugRequest(10L, VoteType.UPVOTE);
+
+        when(voteService.voteBug(request, 1L)).thenReturn(testVoteResponse);
+        ResponseEntity<?> result = voteController.voteBug(request, 1L);
         assertEquals(201, result.getStatusCode().value());
     }
 
     @Test
     void voteComment() {
-        Vote inputVote = new Vote();
-        User user = new User(); user.setId(1L);
-        Comment comment = new Comment(); comment.setId(100L);
-        inputVote.setUser(user); inputVote.setComment(comment); inputVote.setType(VoteType.DOWNVOTE);
-        when(voteService.voteComment(any(Vote.class))).thenReturn(testVote);
-        ResponseEntity<?> result = voteController.voteComment(inputVote);
+        VoteCommentRequest request = new VoteCommentRequest(100L, VoteType.DOWNVOTE);
+
+        when(voteService.voteComment(request, 1L)).thenReturn(testVoteResponse);
+        ResponseEntity<?> result = voteController.voteComment(request, 1L);
         assertEquals(201, result.getStatusCode().value());
     }
 

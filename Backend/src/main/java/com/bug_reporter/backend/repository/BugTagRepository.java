@@ -10,13 +10,14 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Collection;
 
 @Repository
 public interface BugTagRepository extends JpaRepository<BugTag, Long> {
 
     List<BugTag> findByBugId(Long bugId);
 
-    List<BugTag> findByTagId(Long tagId);
+    List<BugTag> findByBugIdIn(Collection<Long> bugIds);
 
     Optional<BugTag> findByBugAndTag(Bug bug, Tag tag);
 

@@ -1,5 +1,7 @@
 package com.bug_reporter.backend.service;
 
+import com.bug_reporter.backend.dto.request.TagCreateRequest;
+import com.bug_reporter.backend.dto.response.TagSummary;
 import com.bug_reporter.backend.model.Tag;
 import com.bug_reporter.backend.repository.TagRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,51 +38,53 @@ class TagServiceTest {
     @Test
     void findAll() {
         when(tagRepository.findAll()).thenReturn(List.of(tag));
-        List<Tag> result = tagService.findAll();
+        List<TagSummary> result = tagService.findAllTags();
         assertNotNull(result);
         assertEquals(1, result.size());
+        assertEquals("backend", result.getFirst().name());
         verify(tagRepository, times(1)).findAll();
     }
 
     @Test
     void findById() {
         when(tagRepository.findById(1L)).thenReturn(Optional.of(tag));
-        Tag result = tagService.findById(1L);
+        TagSummary result = tagService.findTagById(1L);
         assertNotNull(result);
-        assertEquals(1L, result.getId());
+        assertEquals(1L, result.id());
     }
 
     @Test
     void findById_notFound() {
         when(tagRepository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> tagService.findById(99L));
+        assertThrows(RuntimeException.class, () -> tagService.findTagById(99L));
     }
 
     @Test
     void createTag() {
+        TagCreateRequest request = new TagCreateRequest("backend");
         when(tagRepository.existsByNameIgnoreCase("backend")).thenReturn(false);
         when(tagRepository.save(any(Tag.class))).thenReturn(tag);
-        Tag result = tagService.createTag(tag);
+        TagSummary result = tagService.createTag(request);
         assertNotNull(result);
-        assertEquals("backend", result.getName());
-        verify(tagRepository, times(1)).save(tag);
+        assertEquals("backend", result.name());
+        verify(tagRepository, times(1)).save(any(Tag.class));
     }
 
     @Test
     void createTag_duplicate() {
+        TagCreateRequest request = new TagCreateRequest("backend");
         when(tagRepository.existsByNameIgnoreCase("backend")).thenReturn(true);
-        assertThrows(IllegalStateException.class, () -> tagService.createTag(tag));
+        assertThrows(IllegalStateException.class, () -> tagService.createTag(request));
     }
 
     @Test
     void updateTag() {
-        Tag updatedTag = new Tag();
-        updatedTag.setName("frontend");
+        TagCreateRequest request = new TagCreateRequest("frontend");
         when(tagRepository.findById(1L)).thenReturn(Optional.of(tag));
         when(tagRepository.save(any(Tag.class))).thenReturn(tag);
-        Tag result = tagService.updateTag(1L, updatedTag);
+        TagSummary result = tagService.updateTag(1L, request);
         assertNotNull(result);
-        assertEquals("frontend", result.getName());
+        assertEquals("frontend", result.name());
     }
 
     @Test
@@ -93,14 +97,8 @@ class TagServiceTest {
     @Test
     void findByName() {
         when(tagRepository.findByNameIgnoreCase("backend")).thenReturn(Optional.of(tag));
-        Tag result = tagService.findByName("backend");
+        TagSummary result = tagService.findTagByName("backend");
         assertNotNull(result);
-        assertEquals(tag, result);
-    }
-
-    @Test
-    void existsByNameIgnoreCase() {
-        when(tagRepository.existsByNameIgnoreCase("backend")).thenReturn(true);
-        assertTrue(tagService.existsByNameIgnoreCase("backend"));
+        assertEquals("backend", result.name());
     }
 }
