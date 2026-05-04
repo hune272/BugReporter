@@ -1,8 +1,11 @@
 package com.bug_reporter.backend.service;
 
+import com.bug_reporter.backend.dto.request.UserUpdateRequest;
+import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.UserRole;
 import com.bug_reporter.backend.repository.UserRepository;
+import com.bug_reporter.backend.repository.VoteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +29,9 @@ class UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private VoteRepository voteRepository;
+
     @InjectMocks
     private UserService userService;
 
@@ -45,11 +51,11 @@ class UserServiceTest {
     void getAllUsers() {
         when(userRepository.findAll()).thenReturn(List.of(testUser));
 
-        List<User> result = userService.getAllUsers();
+        List<UserResponse> result = userService.getAllUserResponses();
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals("testUser", result.get(0).getUsername());
+        assertEquals("testUser", result.get(0).username());
         verify(userRepository, times(1)).findAll();
     }
 
@@ -57,70 +63,27 @@ class UserServiceTest {
     void getUserById() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        Optional<User> result = userService.getUserById(1L);
+        java.util.Optional<UserResponse> result = userService.getUserResponseById(1L);
 
         assertTrue(result.isPresent());
-        assertEquals("testUser", result.get().getUsername());
+        assertEquals("testUser", result.get().username());
         verify(userRepository, times(1)).findById(1L);
     }
 
     @Test
-    void getUserByEmail() {
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
-
-        Optional<User> result = userService.getUserByEmail("test@example.com");
-
-        assertTrue(result.isPresent());
-        assertEquals("test@example.com", result.get().getEmail());
-        verify(userRepository, times(1)).findByEmail("test@example.com");
-    }
-
-    @Test
-    void createUser() {
-        when(userRepository.existsByEmail(testUser.getEmail())).thenReturn(false);
-        when(userRepository.existsByUsername(testUser.getUsername())).thenReturn(false);
-        when(userRepository.save(testUser)).thenReturn(testUser);
-
-        User result = userService.createUser(testUser);
-
-        assertNotNull(result);
-        assertEquals("testUser", result.getUsername());
-        verify(userRepository, times(1)).save(testUser);
-    }
-
-    @Test
-    void createUser_emailAlreadyExists() {
-        when(userRepository.existsByEmail(testUser.getEmail())).thenReturn(true);
-
-        assertThrows(RuntimeException.class, () -> userService.createUser(testUser));
-    }
-
-    @Test
-    void createUser_usernameAlreadyExists() {
-        when(userRepository.existsByEmail(testUser.getEmail())).thenReturn(false);
-        when(userRepository.existsByUsername(testUser.getUsername())).thenReturn(true);
-
-        assertThrows(RuntimeException.class, () -> userService.createUser(testUser));
-    }
-
-    @Test
     void updateUser() {
-        User updatedUser = new User();
-        updatedUser.setUsername("updatedName");
-        updatedUser.setEmail("updated@example.com");
-        updatedUser.setRole(UserRole.MODERATOR);
-        updatedUser.setPassword("newPass");
+        UserUpdateRequest request = new UserUpdateRequest("updatedName", "updated@example.com", UserRole.USER, "newPass");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
         when(userRepository.save(testUser)).thenReturn(testUser);
 
-        User result = userService.updateUser(1L, updatedUser);
+        UserResponse result = userService.updateUser(1L, request, 1L);
 
         assertNotNull(result);
         assertEquals("updatedName", testUser.getUsername());
         assertEquals("updated@example.com", testUser.getEmail());
-        assertEquals(UserRole.MODERATOR, testUser.getRole());
+        assertEquals(UserRole.USER, testUser.getRole());
         verify(passwordEncoder, times(1)).encode("newPass");
         verify(userRepository, times(1)).save(testUser);
     }
@@ -129,22 +92,23 @@ class UserServiceTest {
     void updateUser_notFound() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> userService.updateUser(99L, testUser));
+        UserUpdateRequest request = new UserUpdateRequest("testUser", "test@example.com", UserRole.USER, null);
+        assertThrows(RuntimeException.class, () -> userService.updateUser(99L, request, 1L));
     }
 
     @Test
     void deleteUser() {
-        when(userRepository.existsById(1L)).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        userService.deleteUser(1L);
+        userService.deleteUser(1L, 1L);
 
-        verify(userRepository, times(1)).deleteById(1L);
+        verify(userRepository, times(1)).delete(testUser);
     }
 
     @Test
     void deleteUser_notFound() {
-        when(userRepository.existsById(99L)).thenReturn(false);
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> userService.deleteUser(99L));
+        assertThrows(RuntimeException.class, () -> userService.deleteUser(99L, 1L));
     }
 }

@@ -1,80 +1,151 @@
 package com.bug_reporter.backend.service;
 
+import com.bug_reporter.backend.dto.request.CommentCreateRequest;
+import com.bug_reporter.backend.dto.request.CommentUpdateRequest;
+import com.bug_reporter.backend.dto.response.CommentResponse;
+import com.bug_reporter.backend.dto.mapper.CommentMapper;
 import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.model.User;
+import com.bug_reporter.backend.model.enums.BugStatus;
+import com.bug_reporter.backend.model.enums.UserRole;
+import com.bug_reporter.backend.model.enums.VoteType;
 import com.bug_reporter.backend.repository.BugRepository;
 import com.bug_reporter.backend.repository.CommentRepository;
 import com.bug_reporter.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class CommentService {
 
-    @Autowired
-    private CommentRepository commentRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private BugRepository bugRepository;
+    private final CommentRepository commentRepository;
+    private final BugRepository bugRepository;
+    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public List<Comment> findAll() {
-        return (List<Comment>) commentRepository.findAll();
+    @Autowired
+    public CommentService(CommentRepository commentRepository, BugRepository bugRepository, UserRepository userRepository, UserService userService) {
+        this.commentRepository = commentRepository;
+        this.bugRepository = bugRepository;
+        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
-    public Comment findById(Long id) {
-        return commentRepository.findById(id).orElse(null);
+    @Transactional(readOnly = true)
+    public List<CommentResponse> findAllComments() {
+        var userScores = userService.getUserScores();
+        return ((List<Comment>) commentRepository.findAll()).stream()
+                .map(comment -> CommentMapper.toResponse(
+                        comment,
+                        comment.getAuthor() == null ? 0.0 : userScores.getOrDefault(comment.getAuthor().getId(), 0.0)
+                ))
+                .toList();
     }
 
-    public Comment save(Comment comment) {
-        return commentRepository.save(comment);
+    @Transactional(readOnly = true)
+    public CommentResponse findCommentById(Long id) {
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
+        return CommentMapper.toResponse(
+                comment,
+                comment.getAuthor() == null ? 0.0 : userService.getUserScore(comment.getAuthor().getId())
+        );
     }
 
-    public Comment save(String commentText, String imageUrl, Long authorId, Long bugId) {
-        User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Bug bug = bugRepository.findById(bugId)
-                .orElseThrow(() -> new RuntimeException("Bug not found"));
-
+    @Transactional
+    public CommentResponse createComment(CommentCreateRequest request, Long authorId) {
         Comment comment = new Comment();
-        comment.setComment(commentText);
-        comment.setImageUrl(imageUrl);
-        comment.setAuthor(author);
+        comment.setComment(request.comment());
+        comment.setImageUrl(request.imageUrl());
+
+        Bug bug = bugRepository.findById(request.bugId())
+                .orElseThrow(() -> new RuntimeException("Bug not found with id: " + request.bugId()));
+        if (bug.getStatus() == BugStatus.SOLVED) {
+            throw new IllegalStateException("No more comments can be added to a solved bug");
+        }
+        if (bug.getStatus() == BugStatus.RECEIVED && commentRepository.countByBugId(bug.getId()) == 0) {
+            bug.setStatus(BugStatus.IN_PROGRESS);
+            bugRepository.save(bug);
+        }
         comment.setBug(bug);
 
-        return commentRepository.save(comment);
+        User author = userRepository.findById(authorId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + authorId));
+        comment.setAuthor(author);
+
+        Comment savedComment = commentRepository.save(comment);
+        return CommentMapper.toResponse(savedComment, userService.getUserScore(author.getId()));
     }
 
-    public Comment updateComment(Long id, String commentText, String imageUrl, Long authorId, Long bugId) {
+    @Transactional
+    public CommentResponse updateComment(Long id, CommentUpdateRequest request, Long requesterId) {
         Comment existingComment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
 
-        existingComment.setComment(commentText);
-        existingComment.setImageUrl(imageUrl);
-
-        if (authorId != null) {
-            User author = userRepository.findById(authorId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            existingComment.setAuthor(author);
+        if (!canModifyComment(existingComment, requesterId)) {
+            throw new SecurityException("You are not allowed to update this comment");
         }
 
-        if (bugId != null) {
-            Bug bug = bugRepository.findById(bugId)
-                    .orElseThrow(() -> new RuntimeException("Bug not found"));
-            existingComment.setBug(bug);
-        }
-
-        return commentRepository.save(existingComment);
+        existingComment.setComment(request.comment());
+        existingComment.setImageUrl(request.imageUrl());
+        Comment savedComment = commentRepository.save(existingComment);
+        return CommentMapper.toResponse(
+                savedComment,
+                savedComment.getAuthor() == null ? 0.0 : userService.getUserScore(savedComment.getAuthor().getId())
+        );
     }
 
-    public void delete(Comment comment) {
+    @Transactional
+    public void deleteComment(Long id, Long requesterId) {
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
+
+        if (!canModifyComment(comment, requesterId)) {
+            throw new SecurityException("You are not allowed to delete this comment");
+        }
         commentRepository.delete(comment);
     }
 
-    public List<Comment> getCommentsByBugId(Long bugId) {
-        return commentRepository.findByBugIdOrderByCreatedAtAsc(bugId);
+    @Transactional(readOnly = true)
+    public List<CommentResponse> getCommentResponsesByBugId(Long bugId) {
+        var userScores = userService.getUserScores();
+        return commentRepository.findByBugIdOrderByCreatedAtAsc(bugId)
+                .stream()
+                .sorted(Comparator
+                        .comparingInt(this::calculateVoteCount)
+                        .reversed()
+                        .thenComparing(Comment::getCreatedAt))
+                .map(comment -> CommentMapper.toResponse(
+                        comment,
+                        comment.getAuthor() == null ? 0.0 : userScores.getOrDefault(comment.getAuthor().getId(), 0.0)
+                ))
+                .toList();
+    }
+
+    private int calculateVoteCount(Comment comment) {
+        if (comment.getVotes() == null) {
+            return 0;
+        }
+        return comment.getVotes()
+                .stream()
+                .mapToInt(vote -> vote.getType() == VoteType.UPVOTE ? 1 : -1)
+                .sum();
+    }
+
+    private boolean canModifyComment(Comment comment, Long requesterId) {
+        if (requesterId == null) {
+            return false;
+        }
+        if (comment.getAuthor() != null && requesterId.equals(comment.getAuthor().getId())) {
+            return true;
+        }
+        return userRepository.findById(requesterId)
+                .map(user -> user.getRole() == UserRole.MODERATOR)
+                .orElse(false);
     }
 }

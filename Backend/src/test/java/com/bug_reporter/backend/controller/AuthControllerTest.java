@@ -1,5 +1,9 @@
 package com.bug_reporter.backend.controller;
 
+import com.bug_reporter.backend.dto.request.LoginRequest;
+import com.bug_reporter.backend.dto.request.RegisterRequest;
+import com.bug_reporter.backend.dto.response.UserResponse;
+import com.bug_reporter.backend.dto.mapper.UserMapper;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.UserRole;
 import com.bug_reporter.backend.service.AuthService;
@@ -13,13 +17,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AuthControllerTest {
+public class AuthControllerTest {
 
     @Mock
     private AuthService authService;
@@ -34,6 +36,7 @@ class AuthControllerTest {
     private AuthController authController;
 
     private User testUser;
+    private UserResponse testUserResponse;
 
     @BeforeEach
     void setUp() {
@@ -42,35 +45,27 @@ class AuthControllerTest {
         testUser.setUsername("testUser");
         testUser.setEmail("test@example.com");
         testUser.setRole(UserRole.USER);
+        testUserResponse = UserMapper.toResponse(testUser);
     }
 
     @Test
     void register() {
-        when(authService.register("testUser", "test@example.com", "password123")).thenReturn(testUser);
+        RegisterRequest body = new RegisterRequest("testUser", "test@example.com", "password123");
 
-        Map<String, String> body = Map.of(
-                "username", "testUser",
-                "email", "test@example.com",
-                "password", "password123"
-        );
+        when(authService.register(body)).thenReturn(testUserResponse);
 
         ResponseEntity<?> result = authController.register(body);
 
-        assertEquals(200, result.getStatusCode().value());
+        assertEquals(201, result.getStatusCode().value());
         assertNotNull(result.getBody());
-        verify(authService, times(1)).register("testUser", "test@example.com", "password123");
+        verify(authService, times(1)).register(body);
     }
 
     @Test
     void register_error() {
-        when(authService.register("testUser", "test@example.com", "password123"))
-                .thenThrow(new RuntimeException("Email already exists"));
+        RegisterRequest body = new RegisterRequest("testUser", "test@example.com", "password123");
 
-        Map<String, String> body = Map.of(
-                "username", "testUser",
-                "email", "test@example.com",
-                "password", "password123"
-        );
+        when(authService.register(body)).thenThrow(new RuntimeException("Email already exists"));
 
         ResponseEntity<?> result = authController.register(body);
 
@@ -79,29 +74,22 @@ class AuthControllerTest {
 
     @Test
     void login() {
-        when(authService.login("test@example.com", "password123", request, response)).thenReturn(testUser);
+        LoginRequest body = new LoginRequest("test@example.com", "password123");
 
-        Map<String, String> body = Map.of(
-                "email", "test@example.com",
-                "password", "password123"
-        );
+        when(authService.login(body, request, response)).thenReturn(testUserResponse);
 
         ResponseEntity<?> result = authController.login(body, request, response);
 
         assertEquals(200, result.getStatusCode().value());
         assertNotNull(result.getBody());
-        verify(authService, times(1)).login("test@example.com", "password123", request, response);
+        verify(authService, times(1)).login(body, request, response);
     }
 
     @Test
     void login_invalidCredentials() {
-        when(authService.login("wrong@example.com", "wrongPass", request, response))
-                .thenThrow(new RuntimeException("Invalid email or password"));
+        LoginRequest body = new LoginRequest("wrong@example.com", "wrongPass");
 
-        Map<String, String> body = Map.of(
-                "email", "wrong@example.com",
-                "password", "wrongPass"
-        );
+        when(authService.login(body, request, response)).thenThrow(new RuntimeException("Invalid email or password"));
 
         ResponseEntity<?> result = authController.login(body, request, response);
 
@@ -112,9 +100,9 @@ class AuthControllerTest {
     void logout() {
         doNothing().when(authService).logout(request);
 
-        ResponseEntity<?> result = authController.logout(request);
+        ResponseEntity<Void> result = authController.logout(request);
 
-        assertEquals(200, result.getStatusCode().value());
+        assertEquals(204, result.getStatusCode().value());
         verify(authService, times(1)).logout(request);
     }
 }

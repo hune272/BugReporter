@@ -1,5 +1,9 @@
 package com.bug_reporter.backend.controller;
 
+import com.bug_reporter.backend.dto.request.CommentCreateRequest;
+import com.bug_reporter.backend.dto.request.CommentUpdateRequest;
+import com.bug_reporter.backend.dto.response.CommentResponse;
+import com.bug_reporter.backend.dto.mapper.CommentMapper;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.service.CommentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,9 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -25,6 +29,7 @@ class CommentControllerTest {
     private CommentController commentController;
 
     private Comment comment;
+    private CommentResponse commentResponse;
 
     @BeforeEach
     void setUp() {
@@ -32,86 +37,69 @@ class CommentControllerTest {
         comment.setId(1L);
         comment.setComment("Initial comment");
         comment.setImageUrl("image.png");
+        commentResponse = CommentMapper.toResponse(comment);
     }
 
     @Test
     void getAllComments() {
-        when(commentService.findAll()).thenReturn(List.of(comment));
-
-        List<Comment> result = commentController.getAllComments();
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(comment, result.getFirst());
+        when(commentService.findAllComments()).thenReturn(List.of(commentResponse));
+        ResponseEntity<List<CommentResponse>> result = commentController.getAllComments();
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(1, result.getBody().size());
     }
 
     @Test
     void getCommentById() {
-        when(commentService.findById(1L)).thenReturn(comment);
+        when(commentService.findCommentById(1L)).thenReturn(commentResponse);
+        ResponseEntity<?> result = commentController.getCommentById(1L);
+        assertEquals(200, result.getStatusCode().value());
+    }
 
-        Comment result = commentController.getCommentById(1L);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
+    @Test
+    void getCommentById_notFound() {
+        when(commentService.findCommentById(99L)).thenThrow(new RuntimeException("Not found"));
+        ResponseEntity<?> result = commentController.getCommentById(99L);
+        assertEquals(404, result.getStatusCode().value());
     }
 
     @Test
     void getCommentsByBugId() {
-        when(commentService.getCommentsByBugId(2L)).thenReturn(List.of(comment));
-
-        List<Comment> result = commentController.getCommentsByBugId(2L);
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(comment, result.getFirst());
+        when(commentService.getCommentResponsesByBugId(2L)).thenReturn(List.of(commentResponse));
+        ResponseEntity<List<CommentResponse>> result = commentController.getCommentsByBugId(2L);
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(1, result.getBody().size());
     }
 
     @Test
     void addComment() {
-        Map<String, Object> body = Map.of(
-                "comment", "Initial comment",
-                "imageUrl", "image.png",
-                "authorId", 1L,
-                "bugId", 2L
-        );
-        when(commentService.save("Initial comment", "image.png", 1L, 2L)).thenReturn(comment);
+        CommentCreateRequest request = new CommentCreateRequest("Initial comment", "image.png", 2L);
 
-        Comment result = commentController.addComment(body);
-
-        assertNotNull(result);
-        assertEquals(comment, result);
-        verify(commentService, times(1)).save("Initial comment", "image.png", 1L, 2L);
+        when(commentService.createComment(request, 1L)).thenReturn(commentResponse);
+        ResponseEntity<?> result = commentController.addComment(request, 1L);
+        assertEquals(201, result.getStatusCode().value());
     }
 
     @Test
     void updateComment() {
-        Comment updatedComment = new Comment();
-        updatedComment.setComment("Updated");
-        updatedComment.setImageUrl("updated.png");
-        Map<String, Object> body = Map.of(
-                "comment", "Updated",
-                "imageUrl", "updated.png",
-                "authorId", 1L,
-                "bugId", 2L
-        );
+        CommentUpdateRequest request = new CommentUpdateRequest("Updated", null);
+        CommentResponse updated = new CommentResponse(1L, "Updated", null, null, null, null, 0);
 
-        when(commentService.updateComment(1L, "Updated", "updated.png", 1L, 2L)).thenReturn(updatedComment);
-
-        Comment result = commentController.updateComment(1L, body);
-
-        assertNotNull(result);
-        assertEquals("Updated", result.getComment());
-        assertEquals("updated.png", result.getImageUrl());
-        verify(commentService, times(1)).updateComment(1L, "Updated", "updated.png", 1L, 2L);
+        when(commentService.updateComment(1L, request, 1L)).thenReturn(updated);
+        ResponseEntity<?> result = commentController.updateComment(1L, request, 1L);
+        assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void deleteComment() {
-        when(commentService.findById(1L)).thenReturn(comment);
+        doNothing().when(commentService).deleteComment(1L, 1L);
+        ResponseEntity<?> result = commentController.deleteComment(1L, 1L);
+        assertEquals(204, result.getStatusCode().value());
+    }
 
-        String result = commentController.deleteComment(1L);
-
-        assertEquals("Comment deleted successfully", result);
-        verify(commentService, times(1)).delete(comment);
+    @Test
+    void deleteComment_notFound() {
+        doThrow(new RuntimeException("Not found")).when(commentService).deleteComment(99L, 1L);
+        ResponseEntity<?> result = commentController.deleteComment(99L, 1L);
+        assertEquals(404, result.getStatusCode().value());
     }
 }

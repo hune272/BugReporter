@@ -19,11 +19,11 @@ public class Vote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "comment_id")
     private Comment comment;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
@@ -31,7 +31,7 @@ public class Vote {
     @Column(name = "vote_type", nullable = false)
     private VoteType type;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "bug_id")
     private Bug bug;
 
