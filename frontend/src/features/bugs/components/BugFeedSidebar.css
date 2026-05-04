@@ -1,0 +1,91 @@
+.bug-feed-sidebar {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-content: start;
+  gap: 22px;
+  align-self: start;
+}
+
+.bug-panel {
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.bug-panel h2 {
+  margin: 0 0 16px;
+  color: #0f2543;
+  font-size: 15px;
+}
+
+.tag-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #526b8c;
+  font-size: 13px;
+}
+
+.tag-list button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.tag-list button:hover,
+.tag-list button.is-selected {
+  color: #0f2543;
+  font-weight: 800;
+}
+
+.tag-list strong {
+  min-width: 28px;
+  border-radius: 4px;
+  background: #f0f4f8;
+  color: #526b8c;
+  font-size: 11px;
+  text-align: center;
+}
+
+.hunter-list {
+  display: grid;
+  gap: 14px;
+}
+
+.hunter-list p {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  margin: 0;
+  column-gap: 10px;
+  color: #0f2543;
+}
+
+.hunter-list p span {
+  display: grid;
+  place-items: center;
+  grid-row: span 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #d8e7ff;
+  color: #243b5a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.hunter-list small {
+  color: #526b8c;
+}

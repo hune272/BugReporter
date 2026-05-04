@@ -1,7 +1,7 @@
 package com.bug_reporter.backend.repository;
 
 import com.bug_reporter.backend.model.Bug;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -16,9 +16,12 @@ import java.util.Optional;
 public interface BugRepository extends JpaRepository<Bug, Long>, JpaSpecificationExecutor<Bug> {
 
     @Override
+    @NullMarked
     @EntityGraph(attributePaths = {"author", "bugTags", "bugTags.tag"})
-    Optional<Bug> findById(@NonNull Long id);
+    Optional<Bug> findById(Long id);
 
+    @Override
+    @NullMarked
     @EntityGraph(attributePaths = {"author"})
-    Page<Bug> findAll(@NonNull Specification<Bug> spec, @NonNull Pageable pageable);
+    Page<Bug> findAll(Specification<Bug> spec, Pageable pageable);
 }
