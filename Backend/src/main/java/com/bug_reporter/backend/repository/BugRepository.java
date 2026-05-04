@@ -1,22 +1,24 @@
 package com.bug_reporter.backend.repository;
 
 import com.bug_reporter.backend.model.Bug;
-import org.springframework.data.domain.Sort;
+import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface BugRepository extends JpaRepository<Bug, Long> {
+public interface BugRepository extends JpaRepository<Bug, Long>, JpaSpecificationExecutor<Bug> {
 
-    List<Bug> getAllBugsByAuthorId(Long authorId);
+    @Override
+    @EntityGraph(attributePaths = {"author", "bugTags", "bugTags.tag"})
+    Optional<Bug> findById(@NonNull Long id);
 
-    List<Bug> getAllBugsByTitle(String title);
-
-    List<Bug> findByAuthorId(Long authorId, Sort sort);
-
-    List<Bug> findByTitleContainingIgnoreCase(String title, Sort sort);
-
-    List<Bug> findByBugTags_Tag_Id(Long tagId, Sort sort);
+    @EntityGraph(attributePaths = {"author"})
+    Page<Bug> findAll(@NonNull Specification<Bug> spec, @NonNull Pageable pageable);
 }

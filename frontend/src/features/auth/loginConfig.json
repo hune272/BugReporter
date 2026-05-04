@@ -1,0 +1,53 @@
+{
+  "title": "Bug Reporter",
+  "alertTitle": "ACCESS RESTRICTED",
+  "alertMessage": "Your account has been flagged for a policy violation. Please contact your system administrator or refer to the v2.4.0-stable security documentation.",
+  "fields": {
+    "email": {
+      "label": "EMAIL",
+      "placeholder": "e.g. user@example.com",
+      "icon": "user"
+    },
+    "password": {
+      "label": "PASSWORD",
+      "placeholder": "",
+      "icon": "lock",
+      "forgotLabel": "Forgot Password?",
+      "forgotHref": "/forgot-password"
+    }
+  },
+  "keepActiveLabel": "Maintain active session for 24 hours",
+  "submitLabel": "INITIALIZE SESSION",
+  "submittingLabel": "AUTHENTICATING...",
+  "registerPrompt": "New operative?",
+  "registerLinkLabel": "Register User Account",
+  "registerHref": "/register",
+  "validation": {
+    "email": {
+      "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+      "messages": {
+        "required": "Email is required.",
+        "pattern": "Enter a valid email address."
+      }
+    },
+    "password": {
+      "minLength": 6,
+      "messages": {
+        "required": "Password is required.",
+        "minLength": "Password must be at least 6 characters."
+      }
+    }
+  },
+  "errors": {
+    "invalidCredentials": "Invalid credentials. Verify your email and password.",
+    "network": "Unable to reach authentication server. Check your connection.",
+    "unknown": "An unexpected error occurred. Please try again."
+  },
+  "footer": {
+    "metaItems": [
+      { "icon": "lock", "text": "AES-256 ENCRYPTED" },
+      { "icon": "package", "text": "V2.4.0-STABLE" }
+    ],
+    "disclaimer": "Proprietary software for authorized personnel only. Monitoring is active. Unauthorized access attempts are logged and reported to the QA Lead."
+  }
+}

@@ -1,0 +1,44 @@
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background-color: var(--color-bg);
+  background-image: radial-gradient(
+    circle,
+    var(--color-dot-pattern) 1px,
+    transparent 1px
+  );
+  background-size: 16px 16px;
+  overflow: hidden;
+}
+
+.login-page__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-page__corner-bug {
+  position: absolute;
+  right: -30px;
+  bottom: -30px;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@media (max-width: 640px) {
+  .login-page__corner-bug {
+    display: none;
+  }
+
+  .login-page {
+    padding: 24px 14px;
+  }
+}

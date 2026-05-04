@@ -1,17 +1,28 @@
 package com.bug_reporter.backend.service;
 
+import com.bug_reporter.backend.dto.request.BugUpdateRequest;
+import com.bug_reporter.backend.dto.request.BugCreateRequest;
+import com.bug_reporter.backend.dto.response.BugResponse;
+import com.bug_reporter.backend.dto.response.PageResponse;
 import com.bug_reporter.backend.model.Bug;
+import com.bug_reporter.backend.model.Tag;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.BugStatus;
 import com.bug_reporter.backend.repository.BugRepository;
+import com.bug_reporter.backend.repository.BugTagRepository;
+import com.bug_reporter.backend.repository.CommentRepository;
+import com.bug_reporter.backend.repository.TagRepository;
 import com.bug_reporter.backend.repository.UserRepository;
+import com.bug_reporter.backend.repository.VoteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,25 +32,45 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class BugServiceTest {
+public class BugServiceTest {
 
     @Mock
     private BugRepository bugRepository;
 
-    @InjectMocks
-    private BugService bugService;
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
+    private VoteRepository voteRepository;
+
+    @Mock
+    private BugTagRepository bugTagRepository;
+
+    @Mock
+    private TagRepository tagRepository;
+
+    @Mock
+    private UserService userService;
+
+    @InjectMocks
+    private BugService bugService;
 
     private Bug testBug;
     private User testUser;
+    private Tag testTag;
 
     @BeforeEach
     void setUp() {
         testUser = new User();
         testUser.setId(1L);
         testUser.setUsername("Tester");
+
+        testTag = new Tag();
+        testTag.setId(10L);
+        testTag.setName("UI");
 
         testBug = new Bug();
         testBug.setId(100L);
@@ -52,89 +83,117 @@ class BugServiceTest {
 
     @Test
     void findAll() {
-        when(bugRepository.findAll()).thenReturn(List.of(testBug));
+        when(bugRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(testBug)));
 
-        List<Bug> bugs = bugService.findAll();
+        when(voteRepository.findByBugIdIn(List.of(100L)))
+                .thenReturn(List.of());
+
+        when(commentRepository.findByBugIdIn(List.of(100L)))
+                .thenReturn(List.of());
+
+        when(bugTagRepository.findByBugIdIn(List.of(100L)))
+                .thenReturn(List.of());
+        when(userService.getUserScores()).thenReturn(java.util.Map.of());
+
+        PageResponse<BugResponse> bugs = bugService.getFilteredBugs(null, null, null, 0, 10);
+
         assertNotNull(bugs);
-        assertEquals(1, bugs.size());
-        assertEquals(testBug, bugs.getFirst());
-        assertEquals(testUser, bugs.getFirst().getAuthor());
-        assertEquals("Eroare la salvare",  bugs.getFirst().getTitle());
+        assertEquals(1, bugs.content().size());
+        assertEquals("Tester", bugs.content().getFirst().author().username());
+        assertEquals("Eroare la salvare", bugs.content().getFirst().title());
 
-        verify(bugRepository, times(1)).findAll();
+        verify(bugRepository, times(1))
+                .findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
     void findById() {
         when(bugRepository.findById(testBug.getId())).thenReturn(Optional.of(testBug));
+        when(bugTagRepository.findByBugIdIn(List.of(100L))).thenReturn(List.of());
+        when(userService.getUserScore(1L)).thenReturn(0.0);
 
-        Bug bug = bugService.findById(testBug.getId());
+        BugResponse bug = bugService.findById(testBug.getId());
         assertNotNull(bug);
-        assertEquals(100L, bug.getId());
+        assertEquals(100L, bug.id());
         verify(bugRepository, times(1)).findById(testBug.getId());
     }
 
     @Test
-    void save() {
-        when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+    void findById_notFound() {
+        when(bugRepository.findById(99L)).thenReturn(Optional.empty());
 
-        bugService.save(testBug, testUser.getId(), null);
-
-        assertEquals(BugStatus.RECEIVED, testBug.getStatus());
-        assertNotNull(testBug.getCreatedAt());
-        assertEquals(testUser, testBug.getAuthor());
-
-        verify(bugRepository, times(1)).save(testBug);
+        assertThrows(RuntimeException.class, () -> bugService.findById(99L));
     }
 
     @Test
-    void getAllBugsByAuthorId() {
-        when(bugRepository.getAllBugsByAuthorId(1L)).thenReturn(List.of(testBug));
+    void create() {
+        BugCreateRequest request = new BugCreateRequest("New Bug", "Description", null, List.of(10L));
+        Bug savedBug = new Bug();
+        savedBug.setId(101L);
+        savedBug.setTitle("New Bug");
+        savedBug.setText("Description");
+        savedBug.setAuthor(testUser);
+        savedBug.setStatus(BugStatus.RECEIVED);
+        savedBug.setCreatedAt(LocalDateTime.now());
 
-        List<Bug> result = bugService.getAllBugsByAuthorId(1L);
-        assertNotNull(result);
-        assertEquals("Tester", result.getFirst().getAuthor().getUsername());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(tagRepository.findAllById(any())).thenReturn(List.of(testTag));
+        when(bugRepository.save(any(Bug.class))).thenReturn(savedBug);
+        when(bugTagRepository.findByBugIdIn(List.of(101L))).thenReturn(List.of());
+        when(userService.getUserScore(1L)).thenReturn(0.0);
+
+        BugResponse result = bugService.create(request, 1L);
+
+        assertEquals("New Bug", result.title());
+        assertEquals(BugStatus.RECEIVED, result.status());
+        assertEquals("Tester", result.author().username());
+        verify(bugRepository, times(1)).save(any(Bug.class));
     }
 
     @Test
-    void getAllBugsByTitle() {
-        when(bugRepository.getAllBugsByTitle("Eroare")).thenReturn(List.of(testBug));
+    void create_authorNotFound() {
+        BugCreateRequest request = new BugCreateRequest("New Bug", "Description", null, List.of(10L));
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        List<Bug> result = bugService.getAllBugsByTitle("Eroare");
-
-        assertEquals(1, result.size());
-        assertTrue(result.getFirst().getTitle().contains("Eroare"));
-    }
-
-    @Test
-    void delete() {
-        bugService.delete(testBug);
-        verify(bugRepository, times(1)).delete(testBug);
-    }
-
-    @Test
-    void getFilteredBugs() {
+        assertThrows(RuntimeException.class, () -> bugService.create(request, 99L));
     }
 
     @Test
     void updateBug() {
         when(bugRepository.findById(100L)).thenReturn(Optional.of(testBug));
-
         when(bugRepository.save(any(Bug.class))).thenReturn(testBug);
+        when(tagRepository.findAllById(any())).thenReturn(List.of(testTag));
+        when(bugTagRepository.findByBugIdIn(List.of(100L))).thenReturn(List.of());
+        when(userService.getUserScore(1L)).thenReturn(0.0);
 
-        Bug updatedInfo = new Bug();
-        updatedInfo.setTitle("Titlu modif");
-        updatedInfo.setStatus(BugStatus.IN_PROGRESS);
+        BugUpdateRequest updatedInfo = new BugUpdateRequest("Titlu modif", "Text modif", null, List.of(10L));
 
-        Bug result = bugService.updateBug(100L, updatedInfo);
+        BugResponse result = bugService.updateBug(100L, updatedInfo, 1L);
         assertNotNull(result);
         verify(bugRepository, times(1)).save(any(Bug.class));
     }
 
     @Test
+    void updateBug_forbidden() {
+        when(bugRepository.findById(100L)).thenReturn(Optional.of(testBug));
+
+        BugUpdateRequest updatedInfo = new BugUpdateRequest("Titlu modif", "Text modif", null, List.of(10L));
+
+        assertThrows(SecurityException.class, () -> bugService.updateBug(100L, updatedInfo, 99L));
+    }
+
+    @Test
     void deleteBug() {
         when(bugRepository.findById(100L)).thenReturn(Optional.of(testBug));
-        bugService.deleteBug(100L);
+        bugService.deleteBug(100L, 1L);
         verify(bugRepository, times(1)).delete(testBug);
+    }
+
+    @Test
+    void deleteBug_forbidden() {
+        when(bugRepository.findById(100L)).thenReturn(Optional.of(testBug));
+
+        assertThrows(SecurityException.class, () -> bugService.deleteBug(100L, 99L));
     }
 }

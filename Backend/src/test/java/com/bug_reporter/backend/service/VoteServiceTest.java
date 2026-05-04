@@ -1,5 +1,8 @@
 package com.bug_reporter.backend.service;
 
+import com.bug_reporter.backend.dto.request.VoteBugRequest;
+import com.bug_reporter.backend.dto.request.VoteCommentRequest;
+import com.bug_reporter.backend.dto.response.VoteResponse;
 import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.model.User;
@@ -15,8 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class VoteServiceTest {
 
     @Mock
@@ -44,7 +44,6 @@ class VoteServiceTest {
     private User authorUser;
     private Bug testBug;
     private Comment testComment;
-    private Vote testVote;
 
     @BeforeEach
     void setUp() {
@@ -65,66 +64,67 @@ class VoteServiceTest {
         testComment.setId(100L);
         testComment.setComment("Comentariu util");
         testComment.setAuthor(authorUser);
-
-        testVote = new Vote();
-        testVote.setId(1000L);
-        testVote.setType(VoteType.UPVOTE);
-        testVote.setUser(testUser);
-        testVote.setBug(testBug);
     }
 
     @Test
     void findAll() {
+        Vote testVote = new Vote();
+        testVote.setType(VoteType.UPVOTE);
         when(voteRepository.findAll()).thenReturn(List.of(testVote));
 
-        List<Vote> result = voteService.findAll();
+        List<VoteResponse> result = voteService.findAllVotes();
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(VoteType.UPVOTE, result.get(0).getType());
-
-        verify(voteRepository, times(1)).findAll();
+        assertEquals(VoteType.UPVOTE, result.get(0).type());
     }
 
     @Test
     void voteBug() {
+        VoteBugRequest request = new VoteBugRequest(10L, VoteType.UPVOTE);
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(bugRepository.findById(10L)).thenReturn(Optional.of(testBug));
 
-        voteService.voteBug(1L, 10L, VoteType.UPVOTE);
+        voteService.voteBug(request, 1L);
         verify(voteRepository, times(1)).save(any(Vote.class));
     }
 
     @Test
     void voteComment() {
+        VoteCommentRequest request = new VoteCommentRequest(100L, VoteType.DOWNVOTE);
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(commentRepository.findById(100L)).thenReturn(Optional.of(testComment));
 
-        voteService.voteComment(1L, 100L, VoteType.DOWNVOTE);
+        voteService.voteComment(request, 1L);
         verify(voteRepository, times(1)).save(any(Vote.class));
     }
 
     @Test
     void getBugVoteCount() {
-        when(voteRepository.getBugVoteCount(10L)).thenReturn(1);
-        Object result = voteService.getBugVoteCount(10L);
+        Vote upvote = new Vote();
+        upvote.setType(VoteType.UPVOTE);
+        when(bugRepository.existsById(10L)).thenReturn(true);
+        when(voteRepository.findByBugId(10L)).thenReturn(List.of(upvote));
 
-        Integer count = (Integer) result;
+        Integer count = voteService.getBugVoteCount(10L);
 
         assertEquals(1, count);
-        verify(voteRepository, times(1)).getBugVoteCount(10L);
+        verify(voteRepository, times(1)).findByBugId(10L);
     }
 
     @Test
     void getCommentVoteCount() {
-        Vote commentVote = new Vote();
-        commentVote.setType(VoteType.UPVOTE);
-        commentVote.setComment(testComment);
+        Vote upvote = new Vote();
+        upvote.setType(VoteType.UPVOTE);
+        Vote downvote = new Vote();
+        downvote.setType(VoteType.DOWNVOTE);
+        when(commentRepository.existsById(100L)).thenReturn(true);
+        when(voteRepository.findByCommentId(100L)).thenReturn(List.of(upvote, upvote, upvote, downvote));
 
-        lenient().when(voteRepository.findByCommentId(100L)).thenReturn(List.of(commentVote));
+        Integer count = voteService.getCommentVoteCount(100L);
 
-        Object count = voteService.getCommentVoteCount(100L);
-
-        assertNotNull(count);
-        verify(voteRepository, times(1)).getCommentVoteCount(100L);
+        assertEquals(2, count);
+        verify(voteRepository, times(1)).findByCommentId(100L);
     }
 }

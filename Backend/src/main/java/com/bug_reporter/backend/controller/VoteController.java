@@ -1,46 +1,100 @@
 package com.bug_reporter.backend.controller;
 
-import com.bug_reporter.backend.model.Vote;
-import com.bug_reporter.backend.model.enums.VoteType;
-import com.bug_reporter.backend.repository.VoteRepository;
+import com.bug_reporter.backend.dto.request.VoteBugRequest;
+import com.bug_reporter.backend.dto.request.VoteCommentRequest;
+import com.bug_reporter.backend.dto.response.VoteResponse;
 import com.bug_reporter.backend.service.VoteService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/votes")
 @CrossOrigin
 public class VoteController {
+
+    private final VoteService voteService;
+
     @Autowired
-    private VoteService voteService;
+    public VoteController(VoteService voteService) {
+        this.voteService = voteService;
+    }
 
     @GetMapping
-    public List<Vote> findAll() {
-        return voteService.findAll();
+    public ResponseEntity<List<VoteResponse>> findAll() {
+        return ResponseEntity.ok(voteService.findAllVotes());
+        //200 OK
     }
 
     @PostMapping("/bug")
-    public void voteBug(@RequestParam Long userId,
-                        @RequestParam Long bugId,
-                        @RequestParam VoteType type) {
-        voteService.voteBug(userId, bugId, type);
+    public ResponseEntity<?> voteBug(@Valid @RequestBody VoteBugRequest request,
+                                     @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+        try {
+            VoteResponse created = voteService.voteBug(request, userId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            //201 Created
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+            //403 Forbidden
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+            //409 Conflict
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
+        }
     }
 
     @PostMapping("/comment")
-    public void voteComment(@RequestParam Long userId, @RequestParam Long commentId, @RequestParam VoteType type) {
-        voteService.voteComment(userId, commentId, type);
+    public ResponseEntity<?> voteComment(@Valid @RequestBody VoteCommentRequest request,
+                                         @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+        try {
+            VoteResponse created = voteService.voteComment(request, userId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            //201 Created
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+            //403 Forbidden
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+            //409 Conflict
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
+        }
     }
 
     @GetMapping("/bug/{bugId}/count")
-    public Integer getBugVoteCount(@PathVariable Long bugId) {
-        return voteService.getBugVoteCount(bugId);
+    public ResponseEntity<?> getBugVoteCount(@PathVariable Long bugId) {
+        try {
+            return ResponseEntity.ok(voteService.getBugVoteCount(bugId));
+            //200 OK
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
+        }
     }
 
     @GetMapping("/comment/{commentId}/count")
-    public Integer getCommentVoteCount(@PathVariable Long commentId) {
-        return voteService.getCommentVoteCount(commentId);
+    public ResponseEntity<?> getCommentVoteCount(@PathVariable Long commentId) {
+        try {
+            return ResponseEntity.ok(voteService.getCommentVoteCount(commentId));
+            //200 OK
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            //404 Not Found
+        }
     }
-
 }
