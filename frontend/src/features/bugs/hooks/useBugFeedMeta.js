@@ -40,7 +40,7 @@ function normalizeBug(bug, meta) {
   return {
     ...bug,
     votes: bug.voteCount ?? 0,
-    comments: bug.commentCount ?? 0,
+    comments: bug.comments ?? [],
     author: {
       ...bug.author,
       score: bug.author?.score ?? meta.userScores[bug.author?.id] ?? 0,

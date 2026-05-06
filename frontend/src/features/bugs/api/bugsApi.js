@@ -48,4 +48,50 @@ export const bugsApi = {
       method: 'DELETE',
     });
   },
+
+  createComment(bugId, commentText, imageUrl) {
+    return apiRequest(`/api/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                comment: commentText,
+                bugId: bugId,
+                imageUrl: imageUrl
+            }),
+        });
+  },
+
+  deleteComment(bugId, commentId) {
+      return apiRequest(`/api/comments/${commentId}`, {
+              method: 'DELETE',
+            });
+    },
+
+  updateComment(commentId, commentText) {
+      return apiRequest(`/api/comments/${commentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: commentText }),
+      });
+    },
+
+  voteComment(bugId, commentId, voteType) {
+      return apiRequest(`/api/votes/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                commentId: commentId,
+                type: voteType
+            }),
+          });
+    },
+
+  voteBug(bugId, voteType) {
+    return apiRequest(`${ENDPOINTS.bugs}/${bugId}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: voteType }),
+        });
+  }
+
 };

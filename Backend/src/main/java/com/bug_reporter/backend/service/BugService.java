@@ -10,6 +10,8 @@ import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.model.BugTag;
 import com.bug_reporter.backend.model.Comment;
 import com.bug_reporter.backend.model.Tag;
+import com.bug_reporter.backend.dto.response.CommentResponse;
+import com.bug_reporter.backend.dto.mapper.CommentMapper;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.Vote;
 import com.bug_reporter.backend.model.enums.BugStatus;
@@ -134,7 +136,7 @@ public class BugService {
         List<Bug> bugs = bugPage.getContent();
 
         Map<Long, Integer> voteCounts = getBugVoteCounts(bugs);
-        Map<Long, Integer> commentCounts = getBugCommentCounts(bugs);
+        Map<Long, List<CommentResponse>> commentsByBugId = getBugCommentsMap(bugs);
         Map<Long, List<TagSummary>> tagsByBugId = getBugTags(bugs);
         Map<Long, Double> userScores = userService.getUserScores();
 
@@ -143,12 +145,31 @@ public class BugService {
                         bug,
                         tagsByBugId.getOrDefault(bug.getId(), List.of()),
                         voteCounts.getOrDefault(bug.getId(), 0),
-                        commentCounts.getOrDefault(bug.getId(), 0),
+                        commentsByBugId.getOrDefault(bug.getId(), List.of()),
                         bug.getAuthor() == null ? 0.0 : userScores.getOrDefault(bug.getAuthor().getId(), 0.0)
                 ))
                 .toList();
 
         return PageResponse.from(bugPage, content);
+    }
+
+    private Map<Long, List<CommentResponse>> getBugCommentsMap(List<Bug> bugs) {
+        List<Long> bugIds = bugs.stream().map(Bug::getId).toList();
+        Map<Long, List<CommentResponse>> commentsMap = new HashMap<>();
+
+        if (bugIds.isEmpty()) {
+            return commentsMap;
+        }
+
+        for (Comment comment : commentRepository.findByBugIdIn(bugIds)) {
+            if (comment.getBug() == null) {
+                continue;
+            }
+            commentsMap.computeIfAbsent(comment.getBug().getId(), ignored -> new ArrayList<>())
+                    .add(CommentMapper.toResponse(comment));
+        }
+
+        return commentsMap;
     }
 
     @Transactional
@@ -216,7 +237,7 @@ public class BugService {
                 bug,
                 getBugTags(List.of(bug)).getOrDefault(bug.getId(), List.of()),
                 getBugVoteCount(bug.getId()),
-                Math.toIntExact(commentRepository.countByBugId(bug.getId())),
+                getBugCommentsMap(List.of(bug)).getOrDefault(bug.getId(), List.of()),
                 bug.getAuthor() == null ? 0.0 : userService.getUserScore(bug.getAuthor().getId())
         );
     }

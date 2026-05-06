@@ -15,5 +15,5 @@ public record BugResponse(
         UserSummary author,
         List<TagSummary> tags,
         int voteCount,
-        int commentCount
+        List<CommentResponse> comments
 ) {}
