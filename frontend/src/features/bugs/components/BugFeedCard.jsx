@@ -38,7 +38,7 @@ function BugFeedCard({ bug, isVoting, onVote }) {
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [tempUrl, setTempUrl] = useState('');
 
-    const [sortType, setSortType] = useState('NEWEST');
+    const [sortType, setSortType] = useState('HIGHEST_VOTES');
 
      const handlePostComment = async () => {
          if (!commentText.trim() || !imageUrl.trim()) {
@@ -98,7 +98,7 @@ function BugFeedCard({ bug, isVoting, onVote }) {
                 case 'OLDEST':
                     return new Date(a.createdAt) - new Date(b.createdAt);
                 default:
-                    return new Date(b.createdAt) - new Date(a.createdAt);
+                    return (b.voteCount || 0) - (a.voteCount || 0);
             }
         }) : [];
 
