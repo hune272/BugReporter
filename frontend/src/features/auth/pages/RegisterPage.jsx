@@ -1,15 +1,24 @@
 import { useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
-import loginConfig from '../loginConfig.json';
+import registerConfig from '../registerConfig.json';
 import LoginHeader from '../components/LoginHeader.jsx';
-import AccessRestrictedAlert from '../components/AccessRestrictedAlert.jsx';
-import LoginForm from '../components/LoginForm.jsx';
+import RegisterForm from '../components/RegisterForm.jsx';
 import PageFooter from '../components/PageFooter.jsx';
 import './LoginPage.css';
 
 function validate(values, rules) {
   const errors = {};
+
+  const username = values.username.trim();
+  const uRules = rules.username;
+  if (username.length === 0) {
+    errors.username = uRules.messages.required;
+  } else if (username.length < uRules.minLength) {
+    errors.username = uRules.messages.minLength;
+  } else if (username.length > uRules.maxLength) {
+    errors.username = uRules.messages.maxLength;
+  }
 
   const email = values.email.trim();
   const emailRules = rules.email;
@@ -26,50 +35,57 @@ function validate(values, rules) {
     errors.password = pRules.messages.minLength;
   }
 
+  const cRules = rules.confirmPassword;
+  if (values.confirmPassword.length === 0) {
+    errors.confirmPassword = cRules.messages.required;
+  } else if (values.confirmPassword !== values.password) {
+    errors.confirmPassword = cRules.messages.mismatch;
+  }
+
   return errors;
 }
 
-function LoginPage() {
-  const { user, login, isLoading } = useAuth();
+function RegisterPage() {
+  const { register, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
-  const [isAccessRestricted, setIsAccessRestricted] = useState(false);
 
-  const config = useMemo(() => loginConfig, []);
-
-  if (!isLoading && user) {
-    return <Navigate to="/bugs" replace />;
-  }
+  const config = useMemo(() => registerConfig, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage('');
+    setSuccessMessage('');
 
-    const errors = validate({ email, password }, config.validation);
+    const errors = validate(
+      { username, email, password, confirmPassword },
+      config.validation,
+    );
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       return;
     }
 
-    const result = await login({
+    const result = await register({
+      username: username.trim(),
       email: email.trim(),
       password,
     });
 
     if (result.success) {
-      setIsAccessRestricted(false);
-      navigate('/bugs');
+      setSuccessMessage(config.successMessage);
+      setTimeout(() => navigate('/login'), 1200);
       return;
     }
 
-    if (result.status === 401) {
-      setIsAccessRestricted(true);
-      setErrorMessage(result.error || config.errors.invalidCredentials);
-    } else if (result.status === 0) {
+    if (result.status === 0) {
       setErrorMessage(config.errors.network);
     } else {
       setErrorMessage(result.error || config.errors.unknown);
@@ -81,29 +97,27 @@ function LoginPage() {
       <div className="login-page__inner">
         <LoginHeader title={config.title} subtitle={config.subtitle} />
 
-        {isAccessRestricted && (
-          <AccessRestrictedAlert
-            title={config.alertTitle}
-            message={config.alertMessage}
-          />
-        )}
-
-        <LoginForm
+        <RegisterForm
           config={config}
+          username={username}
           email={email}
           password={password}
+          confirmPassword={confirmPassword}
           isLoading={isLoading}
           fieldErrors={fieldErrors}
           errorMessage={errorMessage}
+          successMessage={successMessage}
+          onUsernameChange={setUsername}
           onEmailChange={setEmail}
           onPasswordChange={setPassword}
+          onConfirmPasswordChange={setConfirmPassword}
           onSubmit={handleSubmit}
         />
 
         <PageFooter
-          registerPrompt={config.registerPrompt}
-          registerLinkLabel={config.registerLinkLabel}
-          registerHref={config.registerHref}
+          registerPrompt={config.loginPrompt}
+          registerLinkLabel={config.loginLinkLabel}
+          registerHref={config.loginHref}
           footer={config.footer}
         />
       </div>
@@ -120,4 +134,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default RegisterPage;
