@@ -26,7 +26,7 @@ function BugFeedSidebar({ meta, selectedTagId, onTagSelect }) {
         <div className="hunter-list">
           {meta.topHunters.map((hunter) => (
             <p key={hunter.id}>
-              <span>{hunter.username.slice(0, 2).toUpperCase()}</span>
+              <span>{(hunter.username ?? '?').slice(0, 2).toUpperCase()}</span>
               <b>{hunter.username}</b>
               <small>{hunter.score} pts • {hunter.solved} Solved</small>
             </p>

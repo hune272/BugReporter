@@ -4,9 +4,11 @@
   align-content: start;
   overflow: visible;
   padding: 18px;
-  border: 1px solid #dbe3ee;
-  border-radius: 8px;
-  background: #ffffff;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-panel);
+  box-shadow: var(--shadow-panel), var(--inset-highlight);
+  backdrop-filter: blur(14px);
 }
 
 .bug-report-tags__header {
@@ -16,7 +18,7 @@
 
 .bug-report-tags__header > span,
 .bug-report-tag-picker__create > span {
-  color: #526b8c;
+  color: var(--color-text-on-dark-soft);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -31,14 +33,26 @@
 .bug-report-tags__header button {
   min-height: 24px;
   padding: 0 8px;
-  border: 1px solid #dbe3ee;
-  border-radius: 999px;
-  background: #f0f4f8;
-  color: #0f2543;
+  border: 1px solid var(--color-accent-border-soft);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
   font: inherit;
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.bug-report-tags__header button:hover {
+  border-color: var(--interactive-hover-border);
+  background: var(--interactive-hover-bg);
+  color: var(--interactive-hover-color);
+  box-shadow: var(--interactive-hover-shadow);
 }
 
 .bug-report-tags__controls {
@@ -47,52 +61,9 @@
   gap: 8px;
 }
 
-.bug-report-tag-picker {
-  position: relative;
-  min-width: 0;
-}
-
-.bug-report-tag-picker__trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-height: 38px;
-  padding: 0 10px;
-  border: 1px solid #dbe3ee;
-  border-radius: 6px;
-  background: #fbfdff;
-  color: #0f2543;
-  font: inherit;
+.bug-report-tag-picker .dropdown-menu__trigger {
   font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
-}
-
-.bug-report-tag-picker__chevron {
-  width: 9px;
-  height: 9px;
-  border-right: 2px solid #526b8c;
-  border-bottom: 2px solid #526b8c;
-  margin-right: 4px;
-  transform: translateY(-2px) rotate(45deg);
-}
-
-.bug-report-tag-picker__menu {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 2px);
-  left: 0;
-  right: 0;
-  display: grid;
-  gap: 0;
-  max-height: 310px;
-  padding: 0;
-  overflow-y: auto;
-  border: 1px solid #0f2543;
-  border-radius: 0;
-  background: #fbfdff;
-  box-shadow: none;
 }
 
 .bug-report-tag-picker__list {
@@ -100,35 +71,21 @@
   gap: 0;
 }
 
-.bug-report-tag-picker__list button,
-.bug-report-tags__controls .bug-report-tag-picker__list button {
+.bug-report-tag-picker__list .dropdown-menu__item,
+.bug-report-tags__controls .bug-report-tag-picker__list .dropdown-menu__item {
   min-height: 26px;
   padding: 0 14px;
-  border: 0;
   border-radius: 0;
-  background: transparent;
-  color: #0f2543;
-  font: inherit;
   font-size: 13px;
   font-weight: 400;
-  text-align: left;
-  cursor: pointer;
-  box-shadow: none;
-}
-
-.bug-report-tag-picker__list button:hover,
-.bug-report-tag-picker__list button.is-selected,
-.bug-report-tags__controls .bug-report-tag-picker__list button:hover,
-.bug-report-tags__controls .bug-report-tag-picker__list button.is-selected {
-  background: #dbeafe;
 }
 
 .bug-report-tag-picker__create {
   display: grid;
   gap: 8px;
   padding: 10px 14px 12px;
-  border-top: 1px solid #dbe3ee;
-  background: #fbfdff;
+  border-top: 1px solid var(--color-border-muted);
+  background: rgba(5, 7, 11, 0.62);
 }
 
 .bug-report-tag-picker__create div {
@@ -142,35 +99,54 @@
   min-width: 0;
   min-height: 38px;
   padding: 0 10px;
-  border: 1px solid #dbe3ee;
-  border-radius: 6px;
-  background: #fbfdff;
-  color: #0f2543;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-panel-strong);
+  color: var(--color-text-on-dark);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
   outline: none;
 }
 
-.bug-report-tags input:focus {
-  border-color: #0f2543;
-  box-shadow: 0 0 0 3px rgba(15, 37, 67, 0.08);
+.bug-report-tags input::placeholder {
+  color: var(--color-placeholder);
 }
 
-.bug-report-tags__controls button {
+.bug-report-tags input:focus {
+  border-color: var(--color-accent-border-strong);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.bug-report-tags__controls > button,
+.bug-report-tag-picker__create button {
   min-height: 38px;
   padding: 0 12px;
-  border: 1px solid #0f2543;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #0f2543;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-panel-strong);
+  color: var(--color-text-on-dark);
   font: inherit;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
-.bug-report-tags__controls button:disabled {
+.bug-report-tags__controls > button:hover:not(:disabled),
+.bug-report-tag-picker__create button:hover:not(:disabled) {
+  border-color: var(--interactive-hover-border);
+  background: var(--interactive-hover-bg);
+  color: var(--interactive-hover-color);
+  box-shadow: var(--interactive-hover-shadow);
+}
+
+.bug-report-tags__controls > button:disabled,
+.bug-report-tag-picker__create button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }

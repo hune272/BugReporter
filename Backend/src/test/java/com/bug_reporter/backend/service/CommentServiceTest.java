@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,8 +63,8 @@ class CommentServiceTest {
     @Test
     void findAll() {
         when(commentRepository.findAll()).thenReturn(List.of(comment));
-        when(userService.getUserScores()).thenReturn(java.util.Map.of(3L, 0.0));
-        List<CommentResponse> result = commentService.findAllComments();
+        when(userService.getUserScores()).thenReturn(Map.of(3L, 0.0));
+        List<CommentResponse> result = commentService.findAllComments(null);
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("First comment", result.getFirst().comment());
@@ -72,8 +73,8 @@ class CommentServiceTest {
     @Test
     void findById() {
         when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
-        when(userService.getUserScore(3L)).thenReturn(0.0);
-        CommentResponse result = commentService.findCommentById(1L);
+        when(userService.getUserScores()).thenReturn(Map.of(3L, 0.0));
+        CommentResponse result = commentService.findCommentById(1L, null);
         assertNotNull(result);
         assertEquals(1L, result.id());
     }
@@ -81,7 +82,7 @@ class CommentServiceTest {
     @Test
     void findById_notFound() {
         when(commentRepository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> commentService.findCommentById(99L));
+        assertThrows(RuntimeException.class, () -> commentService.findCommentById(99L, null));
     }
 
     @Test
@@ -91,7 +92,7 @@ class CommentServiceTest {
         when(bugRepository.findById(2L)).thenReturn(Optional.of(bug));
         when(userRepository.findById(3L)).thenReturn(Optional.of(author));
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
-        when(userService.getUserScore(3L)).thenReturn(0.0);
+        when(userService.getUserScores()).thenReturn(Map.of(3L, 0.0));
 
         CommentResponse result = commentService.createComment(request, 3L);
         assertNotNull(result);
@@ -104,7 +105,7 @@ class CommentServiceTest {
 
         when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
-        when(userService.getUserScore(3L)).thenReturn(0.0);
+        when(userService.getUserScores()).thenReturn(Map.of(3L, 0.0));
 
         CommentResponse result = commentService.updateComment(1L, request, 3L);
         assertNotNull(result);
@@ -127,8 +128,8 @@ class CommentServiceTest {
     @Test
     void getCommentsByBugId() {
         when(commentRepository.findByBugIdOrderByCreatedAtAsc(2L)).thenReturn(List.of(comment));
-        when(userService.getUserScores()).thenReturn(java.util.Map.of(3L, 0.0));
-        List<CommentResponse> result = commentService.getCommentResponsesByBugId(2L);
+        when(userService.getUserScores()).thenReturn(Map.of(3L, 0.0));
+        List<CommentResponse> result = commentService.getCommentResponsesByBugId(2L, null, "HIGHEST_VOTES");
         assertNotNull(result);
         assertEquals(1, result.size());
     }

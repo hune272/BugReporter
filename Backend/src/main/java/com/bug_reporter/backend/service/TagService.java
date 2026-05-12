@@ -62,6 +62,7 @@ public class TagService {
         return TagMapper.toSummary(tag);
     }
 
+    @Transactional
     public TagSummary createTag(TagCreateRequest request) {
         Tag tag = TagMapper.toEntity(request);
 
@@ -76,6 +77,7 @@ public class TagService {
         return TagMapper.toSummary(tagRepository.save(tag));
     }
 
+    @Transactional
     public TagSummary updateTag(Long id, TagCreateRequest request) {
         Tag existingTag = tagRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tag not found with id: " + id));
@@ -89,6 +91,7 @@ public class TagService {
         return TagMapper.toSummary(tagRepository.save(existingTag));
     }
 
+    @Transactional
     public void deleteTag(Long id) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tag not found with id: " + id));

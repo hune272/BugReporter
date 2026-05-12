@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\Backend\\\\src\\\\main\\\\java\\\\com\\\\bug_reporter\\\\backend\" -Recurse -Directory | ForEach-Object { $_.FullName -replace [regex]::Escape\\(\"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\Backend\\\\src\\\\main\\\\java\\\\com\\\\bug_reporter\\\\backend\"\\), \".\" } | Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\frontend\\\\src\" -Recurse -Directory | ForEach-Object { $_.FullName -replace [regex]::Escape\\(\"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\frontend\\\\src\"\\), \".\" } | Sort-Object)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\frontend\\\\src\" -Recurse -Force)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\frontend\\\\src\" -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\frontend\\\\src\" -Recurse | ForEach-Object { $_.FullName })",
+      "Bash(Get-ChildItem -Recurse -Directory)",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(data[0]['text']\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\frontend\\\\src\" -Recurse -Directory)",
+      "Bash(Remove-Item *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "WebFetch(domain:nareshit.com)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\\\\frontend\\\\src\\\\features\\\\tags\" -Recurse -File)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\" -Recurse -Directory | Select-Object -First 30 | ForEach-Object { $_.FullName })",
+      "Bash(Write-Host \"done\")",
+      "Bash(dir \"D:\\\\Facultate\\\\AN3\\\\Sem2\\\\PS\\\\Project\\\\BugReporter\")",
+      "Bash(mvn test *)",
+      "Bash(npm test *)"
+    ]
+  }
+}

@@ -1,5 +1,7 @@
 package com.bug_reporter.backend.dto.response;
 
+import com.bug_reporter.backend.model.enums.VoteType;
+
 import java.time.LocalDateTime;
 
 public record CommentResponse(
@@ -9,5 +11,6 @@ public record CommentResponse(
         LocalDateTime createdAt,
         UserSummary author,
         Long bugId,
-        int voteCount
+        int voteCount,
+        VoteType currentUserVote
 ) {}

@@ -1,7 +1,7 @@
 import { apiRequest } from '@shared/api/client.js';
 import { ENDPOINTS } from '@shared/utils/constants.js';
 
-export const tagsApi = {
+export const tagService = {
   getTags() {
     return apiRequest(ENDPOINTS.tags);
   },
@@ -13,8 +13,7 @@ export const tagsApi = {
   createTag(data) {
     return apiRequest(ENDPOINTS.tags, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: data,
     });
   },
 };

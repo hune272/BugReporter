@@ -1,119 +1,85 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { tagKeys, userKeys } from '@shared/api/queryKeys.js';
-import { tagsApi } from '@features/tags/api/tagsApi.js';
-import { usersApi } from '@features/users/api/usersApi.js';
+import { STALE_TIMES } from '@shared/utils/cacheConfig.js';
+import { messages } from '@shared/utils/messages.js';
+import { tagService } from '@features/tags/services/tagService.js';
+import { userService } from '@features/users/services/userService.js';
 
 const EMPTY_META = {
   tags: [],
   tagCounts: [],
   users: [],
-  userScores: {},
   topHunters: [],
 };
 
 async function loadTagUsage() {
-  const result = await tagsApi.getTagUsage();
+  const result = await tagService.getTagUsage();
   if (!result.success) {
-    throw new Error(result.error || 'Could not load tag usage.');
+    throw new Error(result.error || messages.loadTagUsageFailed);
   }
   return result.data ?? [];
 }
 
 async function loadUsers() {
-  const result = await usersApi.getUsers({ limit: 100 });
+  const result = await userService.getUsers({ limit: 100 });
   if (!result.success) {
-    throw new Error(result.error || 'Could not load users.');
+    throw new Error(result.error || messages.loadUsersFailed);
   }
   return result.data ?? [];
 }
 
-async function loadUserScores() {
-  const result = await usersApi.getUserScores();
+async function loadTopHunters() {
+  const result = await userService.getTopHunters(3);
   if (!result.success) {
-    throw new Error(result.error || 'Could not load user scores.');
+    throw new Error(result.error || messages.loadUsersFailed);
   }
-  return result.data ?? {};
+  return result.data ?? [];
 }
 
-function normalizeBug(bug, meta) {
-  return {
-    ...bug,
-    votes: bug.voteCount ?? 0,
-    comments: bug.comments ?? [],
-    author: {
-      ...bug.author,
-      score: bug.author?.score ?? meta.userScores[bug.author?.id] ?? 0,
-    },
-    tags: (bug.tags ?? []).map((tag) => tag.name.toUpperCase()),
-    tagIds: (bug.tags ?? []).map((tag) => tag.id),
-  };
-}
-
-export function useBugFeedMeta(bugs) {
+export function useBugFeedMeta() {
   const tagsQuery = useQuery({
     queryKey: tagKeys.usage,
     queryFn: loadTagUsage,
-    staleTime: 5 * 60_000,
+    staleTime: STALE_TIMES.long,
   });
 
   const usersQuery = useQuery({
     queryKey: userKeys.list({ limit: 100 }),
     queryFn: loadUsers,
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.medium,
   });
 
-  const scoresQuery = useQuery({
-    queryKey: userKeys.scores,
-    queryFn: loadUserScores,
-    staleTime: 30_000,
+  const topHuntersQuery = useQuery({
+    queryKey: userKeys.topHunters,
+    queryFn: loadTopHunters,
+    staleTime: STALE_TIMES.short,
   });
 
   const meta = useMemo(() => {
     const allTags = tagsQuery.data ?? EMPTY_META.tags;
     const users = usersQuery.data ?? EMPTY_META.users;
-    const userScores = scoresQuery.data ?? EMPTY_META.userScores;
-
-    const solvedByUser = {};
-    bugs.forEach((bug) => {
-      if (bug.status === 'SOLVED' && bug.author?.id) {
-        solvedByUser[bug.author.id] = (solvedByUser[bug.author.id] ?? 0) + 1;
-      }
-    });
 
     return {
       tags: allTags
         .map((tag) => ({ id: tag.id, name: tag.name }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
+        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
       tagCounts: allTags
         .map((tag) => ({ id: tag.id, name: tag.name, count: tag.count ?? 0 }))
-        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+        .sort((a, b) => b.count - a.count || (a.name ?? '').localeCompare(b.name ?? ''))
         .slice(0, 6),
       users: users
         .map((item) => ({ id: item.id, username: item.username, email: item.email }))
-        .sort((a, b) => a.username.localeCompare(b.username)),
-      userScores,
-      topHunters: users
-        .map((item) => ({
-          id: item.id,
-          username: item.username,
-          score: userScores[item.id] ?? 0,
-          solved: solvedByUser[item.id] ?? 0,
-        }))
-        .sort((a, b) => b.score - a.score || b.solved - a.solved)
-        .slice(0, 3),
+        .sort((a, b) => (a.username ?? '').localeCompare(b.username ?? '')),
+      topHunters: topHuntersQuery.data ?? EMPTY_META.topHunters,
     };
-  }, [bugs, scoresQuery.data, tagsQuery.data, usersQuery.data]);
+  }, [tagsQuery.data, topHuntersQuery.data, usersQuery.data]);
 
-  const feedBugs = useMemo(() => {
-    const normalized = bugs.map((bug) => normalizeBug(bug, meta));
+  const metaErrorMessage =
+    tagsQuery.error?.message ||
+    usersQuery.error?.message ||
+    topHuntersQuery.error?.message ||
+    '';
 
-    return [...normalized].sort((a, b) => {
-      const aDate = new Date(a.createdAt).getTime();
-      const bDate = new Date(b.createdAt).getTime();
-      return bDate - aDate;
-    });
-  }, [bugs, meta]);
-
-  return { meta, feedBugs };
+  return { meta, metaErrorMessage };
 }

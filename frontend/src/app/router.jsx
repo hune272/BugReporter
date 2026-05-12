@@ -1,12 +1,18 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import AppLayout from '@shared/components/layout/AppLayout.jsx';
+import AppErrorBoundary from '@shared/components/feedback/AppErrorBoundary.jsx';
 import ProtectedRoute from '@app/ProtectedRoute.jsx';
-import LoginPage from '@features/auth/pages/LoginPage.jsx';
-import BugListPage from '@features/bugs/pages/BugListPage.jsx';
-import BugReportPage from '@features/bugs/pages/BugReportPage.jsx';
+import {
+  BugDetailRoute,
+  BugListRoute,
+  BugReportRoute,
+  LoginRoute,
+  ModeratorUsersRoute,
+  ProfileRoute,
+} from './routeElements.jsx';
 
 export const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login', element: <LoginRoute />, errorElement: <AppErrorBoundary /> },
 
   {
     element: (
@@ -14,11 +20,16 @@ export const router = createBrowserRouter([
           <AppLayout />
         </ProtectedRoute>
     ),
+    errorElement: <AppErrorBoundary />,
     children: [
       { index: true, element: <Navigate to="/bugs" replace /> },
-      { path: '/bugs', element: <BugListPage /> },
-      { path: '/bugs/new', element: <BugReportPage /> },
-      { path: '/bugs/:id/edit', element: <BugReportPage /> },
+      { path: '/bugs', element: <BugListRoute /> },
+      { path: '/bugs/mine', element: <Navigate to="/profile" replace /> },
+      { path: '/bugs/new', element: <BugReportRoute /> },
+      { path: '/bugs/:id', element: <BugDetailRoute /> },
+      { path: '/bugs/:id/edit', element: <BugReportRoute /> },
+      { path: '/profile', element: <ProfileRoute /> },
+      { path: '/moderation/users', element: <ModeratorUsersRoute /> },
     ],
   },
 

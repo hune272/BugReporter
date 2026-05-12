@@ -5,8 +5,15 @@ export const authKeys = {
 
 export const bugKeys = {
   root: ['bugs'],
-  list: (filters) => ['bugs', filters],
-  detail: (id) => ['bug', id],
+  lists: ['bugs', 'list'],
+  list: (filters) => ['bugs', 'list', filters],
+  detail: (id) => ['bugs', 'detail', String(id)],
+};
+
+export const commentKeys = {
+  root: ['comments'],
+  byBug: (bugId) => ['comments', 'bug', String(bugId)],
+  byBugSorted: (bugId, sortBy) => ['comments', 'bug', String(bugId), sortBy],
 };
 
 export const tagKeys = {
@@ -18,5 +25,5 @@ export const tagKeys = {
 export const userKeys = {
   root: ['users'],
   list: (filters) => ['users', filters],
-  scores: ['userScores'],
+  topHunters: ['userTopHunters'],
 };

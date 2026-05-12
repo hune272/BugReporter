@@ -1,8 +1,8 @@
 package com.bug_reporter.backend.controller;
 
 import com.bug_reporter.backend.dto.request.UserUpdateRequest;
-import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.dto.mapper.UserMapper;
+import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.UserRole;
 import com.bug_reporter.backend.service.UserService;
@@ -45,11 +45,11 @@ public class UserControllerTest {
     void getAllUsers() {
         when(userService.getAllUserResponses()).thenReturn(List.of(testUserResponse));
 
-        ResponseEntity<List<UserResponse>> result = userController.getAllUsers(null, null);
+        ResponseEntity<?> result = userController.getAllUsers(null, null, null, null);
 
         assertEquals(200, result.getStatusCode().value());
         assertNotNull(result.getBody());
-        assertEquals(1, result.getBody().size());
+        assertEquals(1, ((List<?>) result.getBody()).size());
         verify(userService, times(1)).getAllUserResponses();
     }
 
@@ -77,7 +77,7 @@ public class UserControllerTest {
     @Test
     void updateUser() {
         UserUpdateRequest request = new UserUpdateRequest("updatedName", "updated@example.com", UserRole.USER, null);
-        UserResponse updatedUser = new UserResponse(1L, "updatedName", "updated@example.com", UserRole.USER, false);
+        UserResponse updatedUser = new UserResponse(1L, "updatedName", "updated@example.com", UserRole.USER, false, 0.0);
 
         when(userService.updateUser(1L, request, 1L)).thenReturn(updatedUser);
 

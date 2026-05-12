@@ -11,12 +11,20 @@ export const ENDPOINTS = {
   bug: (id) => `/api/bugs/${id}`,
   bugTags: (bugId) => `/api/bugs/${bugId}/tags`,
   bugTag: (bugId, tagId) => `/api/bugs/${bugId}/tags/${tagId}`,
+  acceptComment: (bugId, commentId) => `/api/bugs/${bugId}/comments/${commentId}/accept`,
+
+  comments: '/api/comments',
+  comment: (id) => `/api/comments/${id}`,
+  commentsByBug: (bugId) => `/api/comments/bug/${bugId}`,
 
   tags: '/api/tags',
   tagUsage: '/api/tags/usage',
 
   users: '/api/users',
-  userScores: '/api/users/scores',
+  user: (id) => `/api/users/${id}`,
+  userTopHunters: '/api/users/top-hunters',
+  banUser: (id) => `/api/users/${id}/ban`,
+  unbanUser: (id) => `/api/users/${id}/unban`,
 
   voteBug: '/api/votes/bug',
   voteComment: '/api/votes/comment',

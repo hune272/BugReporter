@@ -15,7 +15,7 @@ function buildLoginBody(email, password) {
   return JSON.stringify({ email, password });
 }
 
-export const authApi = {
+export const authService = {
   async login({ email, password }) {
     const result = await apiRequest(ENDPOINTS.login, {
       method: 'POST',
@@ -41,5 +41,3 @@ export const authApi = {
     await apiRequest(ENDPOINTS.logout, { method: 'POST' });
   },
 };
-
-export const __testing__ = { LOGIN_CONTENT_TYPE };

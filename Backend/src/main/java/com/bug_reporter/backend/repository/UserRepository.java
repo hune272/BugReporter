@@ -1,6 +1,7 @@
 package com.bug_reporter.backend.repository;
 
 import com.bug_reporter.backend.model.User;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -20,7 +21,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsername(String username);
 
-    List<User> findAllByOrderByUsernameAsc(Pageable pageable);
+    Page<User> findAllByOrderByUsernameAsc(Pageable pageable);
 
-    List<User> findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByUsernameAsc(String username, String email, Pageable pageable);
+    Page<User> findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByUsernameAsc(String username, String email, Pageable pageable);
 }

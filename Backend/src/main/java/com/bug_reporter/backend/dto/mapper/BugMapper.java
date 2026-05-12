@@ -10,7 +10,6 @@ import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.Vote;
 import com.bug_reporter.backend.model.enums.VoteType;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public final class BugMapper {
@@ -40,14 +39,18 @@ public final class BugMapper {
                 .map(TagMapper::toSummary)
                 .toList();
 
-        return toResponse(bug, tags, voteCount, comments);
+        return toResponse(bug, tags, voteCount, comments == null ? 0 : comments.size(), comments, 0.0, null);
     }
 
     public static BugResponse toResponse(Bug bug, List<TagSummary> tags, int voteCount, List<CommentResponse> comments) {
-        return toResponse(bug, tags, voteCount, comments, 0.0);
+        return toResponse(bug, tags, voteCount, comments == null ? 0 : comments.size(), comments, 0.0, null);
     }
 
-    public static BugResponse toResponse(Bug bug, List<TagSummary> tags, int voteCount, List<CommentResponse> comments, double authorScore) {
+    public static BugResponse toResponse(Bug bug, List<TagSummary> tags, int voteCount, int commentCount, List<CommentResponse> comments, double authorScore) {
+        return toResponse(bug, tags, voteCount, commentCount, comments, authorScore, null);
+    }
+
+    public static BugResponse toResponse(Bug bug, List<TagSummary> tags, int voteCount, int commentCount, List<CommentResponse> comments, double authorScore, VoteType currentUserVote) {
 
         return new BugResponse(
                 bug.getId(),
@@ -59,7 +62,9 @@ public final class BugMapper {
                 UserMapper.toSummary(bug.getAuthor(), authorScore),
                 tags == null ? List.of() : tags,
                 voteCount,
-                comments
+                currentUserVote,
+                commentCount,
+                comments == null ? List.of() : comments
         );
     }
 

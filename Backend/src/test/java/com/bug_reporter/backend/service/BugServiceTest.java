@@ -8,6 +8,7 @@ import com.bug_reporter.backend.model.Bug;
 import com.bug_reporter.backend.model.Tag;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.BugStatus;
+import com.bug_reporter.backend.model.enums.VoteType;
 import com.bug_reporter.backend.repository.BugRepository;
 import com.bug_reporter.backend.repository.BugTagRepository;
 import com.bug_reporter.backend.repository.CommentRepository;
@@ -26,6 +27,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,9 +96,9 @@ public class BugServiceTest {
 
         when(bugTagRepository.findByBugIdIn(List.of(100L)))
                 .thenReturn(List.of());
-        when(userService.getUserScores()).thenReturn(java.util.Map.of());
+        when(userService.getUserScores()).thenReturn(Map.of());
 
-        PageResponse<BugResponse> bugs = bugService.getFilteredBugs(null, null, null, 0, 10);
+        PageResponse<BugResponse> bugs = bugService.getFilteredBugs(null, null, null, 0, 10, null);
 
         assertNotNull(bugs);
         assertEquals(1, bugs.content().size());
@@ -111,9 +113,13 @@ public class BugServiceTest {
     void findById() {
         when(bugRepository.findById(testBug.getId())).thenReturn(Optional.of(testBug));
         when(bugTagRepository.findByBugIdIn(List.of(100L))).thenReturn(List.of());
-        when(userService.getUserScore(1L)).thenReturn(0.0);
+        when(commentRepository.findByBugIdIn(List.of(100L))).thenReturn(List.of());
+        when(voteRepository.countByBugIdAndType(100L, VoteType.UPVOTE)).thenReturn(0L);
+        when(voteRepository.countByBugIdAndType(100L, VoteType.DOWNVOTE)).thenReturn(0L);
+        when(voteRepository.findByUserIdAndBugId(1L, 100L)).thenReturn(Optional.empty());
+        when(userService.getUserScores()).thenReturn(Map.of());
 
-        BugResponse bug = bugService.findById(testBug.getId());
+        BugResponse bug = bugService.findById(testBug.getId(), 1L);
         assertNotNull(bug);
         assertEquals(100L, bug.id());
         verify(bugRepository, times(1)).findById(testBug.getId());
@@ -123,7 +129,7 @@ public class BugServiceTest {
     void findById_notFound() {
         when(bugRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> bugService.findById(99L));
+        assertThrows(RuntimeException.class, () -> bugService.findById(99L, 1L));
     }
 
     @Test
@@ -141,7 +147,11 @@ public class BugServiceTest {
         when(tagRepository.findAllById(any())).thenReturn(List.of(testTag));
         when(bugRepository.save(any(Bug.class))).thenReturn(savedBug);
         when(bugTagRepository.findByBugIdIn(List.of(101L))).thenReturn(List.of());
-        when(userService.getUserScore(1L)).thenReturn(0.0);
+        when(commentRepository.findByBugIdIn(List.of(101L))).thenReturn(List.of());
+        when(voteRepository.countByBugIdAndType(101L, VoteType.UPVOTE)).thenReturn(0L);
+        when(voteRepository.countByBugIdAndType(101L, VoteType.DOWNVOTE)).thenReturn(0L);
+        when(voteRepository.findByUserIdAndBugId(1L, 101L)).thenReturn(Optional.empty());
+        when(userService.getUserScores()).thenReturn(Map.of(1L, 0.0));
 
         BugResponse result = bugService.create(request, 1L);
 
@@ -165,7 +175,11 @@ public class BugServiceTest {
         when(bugRepository.save(any(Bug.class))).thenReturn(testBug);
         when(tagRepository.findAllById(any())).thenReturn(List.of(testTag));
         when(bugTagRepository.findByBugIdIn(List.of(100L))).thenReturn(List.of());
-        when(userService.getUserScore(1L)).thenReturn(0.0);
+        when(commentRepository.findByBugIdIn(List.of(100L))).thenReturn(List.of());
+        when(voteRepository.countByBugIdAndType(100L, VoteType.UPVOTE)).thenReturn(0L);
+        when(voteRepository.countByBugIdAndType(100L, VoteType.DOWNVOTE)).thenReturn(0L);
+        when(voteRepository.findByUserIdAndBugId(1L, 100L)).thenReturn(Optional.empty());
+        when(userService.getUserScores()).thenReturn(Map.of(1L, 0.0));
 
         BugUpdateRequest updatedInfo = new BugUpdateRequest("Titlu modif", "Text modif", null, List.of(10L));
 

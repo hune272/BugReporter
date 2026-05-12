@@ -16,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/comments"})
-@CrossOrigin
 public class CommentController {
 
     private final CommentService commentService;
@@ -27,15 +26,19 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CommentResponse>> getAllComments() {
-        return ResponseEntity.ok(commentService.findAllComments());
+    public ResponseEntity<?> getAllComments(@AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+        return ResponseEntity.ok(commentService.findAllComments(requesterId));
         //200 OK
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCommentById(@PathVariable Long id) {
+    public ResponseEntity<?> getCommentById(@PathVariable Long id,
+                                            @AuthenticationPrincipal Long requesterId) {
         try {
-            return ResponseEntity.ok(commentService.findCommentById(id));
+            return ResponseEntity.ok(commentService.findCommentById(id, requesterId));
             //200 OK
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
@@ -44,8 +47,11 @@ public class CommentController {
     }
 
     @GetMapping("/bug/{bugId}")
-    public ResponseEntity<List<CommentResponse>> getCommentsByBugId(@PathVariable Long bugId) {
-        return ResponseEntity.ok(commentService.getCommentResponsesByBugId(bugId));
+    public ResponseEntity<List<CommentResponse>> getCommentsByBugId(
+            @PathVariable Long bugId,
+            @RequestParam(defaultValue = "HIGHEST_VOTES") String sortBy,
+            @AuthenticationPrincipal Long requesterId) {
+        return ResponseEntity.ok(commentService.getCommentResponsesByBugId(bugId, requesterId, sortBy));
         //200 OK
     }
 

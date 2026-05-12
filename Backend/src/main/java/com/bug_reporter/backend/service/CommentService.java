@@ -37,24 +37,24 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public List<CommentResponse> findAllComments() {
+    public List<CommentResponse> findAllComments(Long requesterId) {
         var userScores = userService.getUserScores();
         return ((List<Comment>) commentRepository.findAll()).stream()
                 .map(comment -> CommentMapper.toResponse(
                         comment,
-                        comment.getAuthor() == null ? 0.0 : userScores.getOrDefault(comment.getAuthor().getId(), 0.0)
+                        comment.getAuthor() == null ? 0.0 : userScores.getOrDefault(comment.getAuthor().getId(), 0.0),
+                        requesterId
                 ))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public CommentResponse findCommentById(Long id) {
+    public CommentResponse findCommentById(Long id, Long requesterId) {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
-        return CommentMapper.toResponse(
-                comment,
-                comment.getAuthor() == null ? 0.0 : userService.getUserScore(comment.getAuthor().getId())
-        );
+        double authorScore = comment.getAuthor() == null ? 0.0
+                : userService.getUserScores().getOrDefault(comment.getAuthor().getId(), 0.0);
+        return CommentMapper.toResponse(comment, authorScore, requesterId);
     }
 
     @Transactional
@@ -79,7 +79,8 @@ public class CommentService {
         comment.setAuthor(author);
 
         Comment savedComment = commentRepository.save(comment);
-        return CommentMapper.toResponse(savedComment, userService.getUserScore(author.getId()));
+        double authorScore = userService.getUserScores().getOrDefault(author.getId(), 0.0);
+        return CommentMapper.toResponse(savedComment, authorScore);
     }
 
     @Transactional
@@ -92,12 +93,13 @@ public class CommentService {
         }
 
         existingComment.setComment(request.comment());
-        existingComment.setImageUrl(request.imageUrl());
+        if (request.imageUrl() != null) {
+            existingComment.setImageUrl(request.imageUrl());
+        }
         Comment savedComment = commentRepository.save(existingComment);
-        return CommentMapper.toResponse(
-                savedComment,
-                savedComment.getAuthor() == null ? 0.0 : userService.getUserScore(savedComment.getAuthor().getId())
-        );
+        double authorScore = savedComment.getAuthor() == null ? 0.0
+                : userService.getUserScores().getOrDefault(savedComment.getAuthor().getId(), 0.0);
+        return CommentMapper.toResponse(savedComment, authorScore, requesterId);
     }
 
     @Transactional
@@ -112,17 +114,24 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public List<CommentResponse> getCommentResponsesByBugId(Long bugId) {
+    public List<CommentResponse> getCommentResponsesByBugId(Long bugId, Long requesterId, String sortBy) {
         var userScores = userService.getUserScores();
+
+        Comparator<Comment> comparator = switch (sortBy == null ? "HIGHEST_VOTES" : sortBy) {
+            case "LOWEST_VOTES" -> Comparator.comparingInt(this::calculateVoteCount);
+            case "NEWEST" -> Comparator.comparing(Comment::getCreatedAt).reversed();
+            case "OLDEST" -> Comparator.comparing(Comment::getCreatedAt);
+            default -> Comparator.comparingInt(this::calculateVoteCount).reversed()
+                    .thenComparing(Comment::getCreatedAt);
+        };
+
         return commentRepository.findByBugIdOrderByCreatedAtAsc(bugId)
                 .stream()
-                .sorted(Comparator
-                        .comparingInt(this::calculateVoteCount)
-                        .reversed()
-                        .thenComparing(Comment::getCreatedAt))
+                .sorted(comparator)
                 .map(comment -> CommentMapper.toResponse(
                         comment,
-                        comment.getAuthor() == null ? 0.0 : userScores.getOrDefault(comment.getAuthor().getId(), 0.0)
+                        comment.getAuthor() == null ? 0.0 : userScores.getOrDefault(comment.getAuthor().getId(), 0.0),
+                        requesterId
                 ))
                 .toList();
     }

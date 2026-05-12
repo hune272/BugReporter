@@ -26,7 +26,7 @@ public class Bug {
     private String text;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String picture;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

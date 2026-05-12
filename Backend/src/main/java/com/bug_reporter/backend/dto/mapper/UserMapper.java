@@ -10,13 +10,18 @@ public final class UserMapper {
     }
 
     public static UserResponse toResponse(User user) {
+        return toResponse(user, 0.0);
+    }
+
+    public static UserResponse toResponse(User user, double score) {
         if (user == null) return null;
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole(),
-                user.isBanned()
+                user.isBanned(),
+                score
         );
     }
 

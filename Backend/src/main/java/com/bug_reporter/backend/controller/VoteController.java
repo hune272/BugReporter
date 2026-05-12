@@ -16,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/votes")
-@CrossOrigin
 public class VoteController {
 
     private final VoteService voteService;
@@ -40,6 +39,10 @@ public class VoteController {
         }
         try {
             VoteResponse created = voteService.voteBug(request, userId);
+            if (created == null) {
+                return ResponseEntity.noContent().build();
+                //204 No Content — vote was toggled off
+            }
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
             //201 Created
         } catch (SecurityException e) {
@@ -62,6 +65,10 @@ public class VoteController {
         }
         try {
             VoteResponse created = voteService.voteComment(request, userId);
+            if (created == null) {
+                return ResponseEntity.noContent().build();
+                //204 No Content — vote was toggled off
+            }
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
             //201 Created
         } catch (SecurityException e) {

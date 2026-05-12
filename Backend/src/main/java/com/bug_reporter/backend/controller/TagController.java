@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/tags"})
-@CrossOrigin
 public class TagController {
 
     private final TagService tagService;
@@ -60,7 +60,11 @@ public class TagController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addTag(@Valid @RequestBody TagCreateRequest request) {
+    public ResponseEntity<?> addTag(@Valid @RequestBody TagCreateRequest request,
+                                    @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
         try {
             TagSummary created = tagService.createTag(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -75,7 +79,11 @@ public class TagController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTag(@PathVariable Long id, @Valid @RequestBody TagCreateRequest request) {
+    public ResponseEntity<?> updateTag(@PathVariable Long id, @Valid @RequestBody TagCreateRequest request,
+                                       @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
         try {
             TagSummary updated = tagService.updateTag(id, request);
             return ResponseEntity.ok(updated);
@@ -90,7 +98,11 @@ public class TagController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteTag(@PathVariable Long id) {
+    public ResponseEntity<?> deleteTag(@PathVariable Long id,
+                                       @AuthenticationPrincipal Long requesterId) {
+        if (requesterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
         try {
             tagService.deleteTag(id);
             return ResponseEntity.noContent().build();

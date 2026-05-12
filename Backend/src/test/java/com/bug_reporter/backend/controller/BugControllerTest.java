@@ -61,11 +61,11 @@ class BugControllerTest {
                 true
         );
 
-        when(bugService.getFilteredBugs("UI", 1L, null, 0, 10))
+        when(bugService.getFilteredBugs("UI", 1L, null, 0, 10, 1L))
                 .thenReturn(page);
 
         ResponseEntity<PageResponse<BugResponse>> result =
-                bugController.getBugs("UI", 1L, null, 0, 10);
+                bugController.getBugs("UI", 1L, null, 0, 10, 1L);
 
         assertEquals(200, result.getStatusCode().value());
         assertNotNull(result.getBody());
@@ -73,20 +73,20 @@ class BugControllerTest {
         assertEquals("UI Error", result.getBody().content().getFirst().title());
 
         verify(bugService, times(1))
-                .getFilteredBugs("UI", 1L, null, 0, 10);
+                .getFilteredBugs("UI", 1L, null, 0, 10, 1L);
     }
 
     @Test
     void getBugById() {
-        when(bugService.findById(100L)).thenReturn(testBugResponse);
-        ResponseEntity<?> result = bugController.getBugById(100L);
+        when(bugService.findById(100L, 1L)).thenReturn(testBugResponse);
+        ResponseEntity<?> result = bugController.getBugById(100L, 1L);
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void getBugById_notFound() {
-        when(bugService.findById(99L)).thenThrow(new RuntimeException("Bug not found"));
-        ResponseEntity<?> result = bugController.getBugById(99L);
+        when(bugService.findById(99L, 1L)).thenThrow(new RuntimeException("Bug not found"));
+        ResponseEntity<?> result = bugController.getBugById(99L, 1L);
         assertEquals(404, result.getStatusCode().value());
     }
 

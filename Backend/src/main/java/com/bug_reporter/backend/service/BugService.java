@@ -69,10 +69,10 @@ public class BugService {
     }
 
     @Transactional(readOnly = true)
-    public BugResponse findById(Long id) {
+    public BugResponse findById(Long id, Long requesterId) {
         Bug bug = bugRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bug not found with id: " + id));
-        return toResponse(bug);
+        return toResponse(bug, requesterId);
     }
 
     private Specification<Bug> buildBugSpecification(String title, Long authorId, Long tagId) {
@@ -118,7 +118,7 @@ public class BugService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<BugResponse> getFilteredBugs(String title, Long authorId, Long tagId, int page, int size) {
+    public PageResponse<BugResponse> getFilteredBugs(String title, Long authorId, Long tagId, int page, int size, Long requesterId) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
 
@@ -135,8 +135,10 @@ public class BugService {
 
         List<Bug> bugs = bugPage.getContent();
 
-        Map<Long, Integer> voteCounts = getBugVoteCounts(bugs);
-        Map<Long, List<CommentResponse>> commentsByBugId = getBugCommentsMap(bugs);
+        List<Vote> votes = getBugVotes(bugs);
+        Map<Long, Integer> voteCounts = getBugVoteCounts(votes);
+        Map<Long, VoteType> currentUserVotes = getCurrentUserBugVotes(votes, requesterId);
+        Map<Long, Integer> commentCounts = getBugCommentCounts(bugs);
         Map<Long, List<TagSummary>> tagsByBugId = getBugTags(bugs);
         Map<Long, Double> userScores = userService.getUserScores();
 
@@ -145,15 +147,17 @@ public class BugService {
                         bug,
                         tagsByBugId.getOrDefault(bug.getId(), List.of()),
                         voteCounts.getOrDefault(bug.getId(), 0),
-                        commentsByBugId.getOrDefault(bug.getId(), List.of()),
-                        bug.getAuthor() == null ? 0.0 : userScores.getOrDefault(bug.getAuthor().getId(), 0.0)
+                        commentCounts.getOrDefault(bug.getId(), 0),
+                        List.of(),
+                        bug.getAuthor() == null ? 0.0 : userScores.getOrDefault(bug.getAuthor().getId(), 0.0),
+                        currentUserVotes.get(bug.getId())
                 ))
                 .toList();
 
         return PageResponse.from(bugPage, content);
     }
 
-    private Map<Long, List<CommentResponse>> getBugCommentsMap(List<Bug> bugs) {
+    private Map<Long, List<CommentResponse>> getBugCommentsMap(List<Bug> bugs, Long requesterId, Map<Long, Double> userScores) {
         List<Long> bugIds = bugs.stream().map(Bug::getId).toList();
         Map<Long, List<CommentResponse>> commentsMap = new HashMap<>();
 
@@ -165,8 +169,9 @@ public class BugService {
             if (comment.getBug() == null) {
                 continue;
             }
+            double authorScore = comment.getAuthor() == null ? 0.0 : userScores.getOrDefault(comment.getAuthor().getId(), 0.0);
             commentsMap.computeIfAbsent(comment.getBug().getId(), ignored -> new ArrayList<>())
-                    .add(CommentMapper.toResponse(comment));
+                    .add(CommentMapper.toResponse(comment, authorScore, requesterId));
         }
 
         return commentsMap;
@@ -182,7 +187,7 @@ public class BugService {
         bug.setStatus(BugStatus.RECEIVED);
         Bug savedBug = bugRepository.save(bug);
         replaceBugTags(savedBug, request.tagIds());
-        return toResponse(savedBug);
+        return toResponse(savedBug, authorId);
     }
 
     @Transactional
@@ -199,7 +204,7 @@ public class BugService {
         bug.setPicture(request.picture());
         Bug savedBug = bugRepository.save(bug);
         replaceBugTags(savedBug, request.tagIds());
-        return toResponse(savedBug);
+        return toResponse(savedBug, requesterId);
     }
 
     @Transactional
@@ -229,16 +234,25 @@ public class BugService {
         }
 
         bug.setStatus(BugStatus.SOLVED);
-        return toResponse(bugRepository.save(bug));
+        return toResponse(bugRepository.save(bug), requesterId);
     }
 
     private BugResponse toResponse(Bug bug) {
+        return toResponse(bug, null);
+    }
+
+    private BugResponse toResponse(Bug bug, Long requesterId) {
+        Map<Long, Double> userScores = userService.getUserScores();
+        List<CommentResponse> comments = getBugCommentsMap(List.of(bug), requesterId, userScores).getOrDefault(bug.getId(), List.of());
+
         return BugMapper.toResponse(
                 bug,
                 getBugTags(List.of(bug)).getOrDefault(bug.getId(), List.of()),
                 getBugVoteCount(bug.getId()),
-                getBugCommentsMap(List.of(bug)).getOrDefault(bug.getId(), List.of()),
-                bug.getAuthor() == null ? 0.0 : userService.getUserScore(bug.getAuthor().getId())
+                comments.size(),
+                comments,
+                bug.getAuthor() == null ? 0.0 : userScores.getOrDefault(bug.getAuthor().getId(), 0.0),
+                getCurrentUserBugVote(bug.getId(), requesterId)
         );
     }
 
@@ -248,15 +262,20 @@ public class BugService {
         return Math.toIntExact(upvotes - downvotes);
     }
 
-    private Map<Long, Integer> getBugVoteCounts(List<Bug> bugs) {
+    private List<Vote> getBugVotes(List<Bug> bugs) {
         List<Long> bugIds = bugs.stream().map(Bug::getId).toList();
-        Map<Long, Integer> voteCounts = new HashMap<>();
 
         if (bugIds.isEmpty()) {
-            return voteCounts;
+            return List.of();
         }
 
-        for (Vote vote : voteRepository.findByBugIdIn(bugIds)) {
+        return voteRepository.findByBugIdIn(bugIds);
+    }
+
+    private Map<Long, Integer> getBugVoteCounts(List<Vote> votes) {
+        Map<Long, Integer> voteCounts = new HashMap<>();
+
+        for (Vote vote : votes) {
             if (vote.getBug() == null) {
                 continue;
             }
@@ -266,6 +285,35 @@ public class BugService {
         }
 
         return voteCounts;
+    }
+
+    private Map<Long, VoteType> getCurrentUserBugVotes(List<Vote> votes, Long requesterId) {
+        Map<Long, VoteType> currentUserVotes = new HashMap<>();
+
+        if (requesterId == null) {
+            return currentUserVotes;
+        }
+
+        for (Vote vote : votes) {
+            if (vote.getBug() == null || vote.getUser() == null) {
+                continue;
+            }
+            if (requesterId.equals(vote.getUser().getId())) {
+                currentUserVotes.put(vote.getBug().getId(), vote.getType());
+            }
+        }
+
+        return currentUserVotes;
+    }
+
+    private VoteType getCurrentUserBugVote(Long bugId, Long requesterId) {
+        if (requesterId == null) {
+            return null;
+        }
+
+        return voteRepository.findByUserIdAndBugId(requesterId, bugId)
+                .map(Vote::getType)
+                .orElse(null);
     }
 
     private Map<Long, Integer> getBugCommentCounts(List<Bug> bugs) {

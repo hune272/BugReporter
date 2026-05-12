@@ -1,19 +1,10 @@
 import './BugTagManager.css';
+import DropdownMenu from '@shared/components/dropdown/DropdownMenu.jsx';
 
-function BugTagManager({
-  tags,
-  selectedTags,
-  selectedExistingTag,
-  selectedExistingTagId,
-  isTagMenuOpen,
-  newTagName,
-  onMenuToggle,
-  onExistingTagSelect,
-  onExistingTagAdd,
-  onNewTagNameChange,
-  onNewTagCreate,
-  onSelectedTagRemove,
-}) {
+function BugTagManager({ tags, selection, handlers }) {
+  const { selectedTags, selectedExistingTag, selectedExistingTagId, isTagMenuOpen, newTagName } = selection;
+  const { onMenuToggle, onExistingTagSelect, onExistingTagAdd, onNewTagNameChange, onNewTagCreate, onSelectedTagRemove } = handlers;
+
   return (
     <div className="bug-report-tags">
       <div className="bug-report-tags__header">
@@ -28,54 +19,53 @@ function BugTagManager({
       </div>
 
       <div className="bug-report-tags__controls">
-        <div className="bug-report-tag-picker">
-          <button
-            type="button"
-            className="bug-report-tag-picker__trigger"
-            aria-expanded={isTagMenuOpen}
-            onClick={onMenuToggle}
-          >
-            {selectedExistingTag?.name ?? 'Select tag...'}
-            <span className="bug-report-tag-picker__chevron" aria-hidden="true" />
-          </button>
+        <DropdownMenu
+          className="bug-report-tag-picker"
+          triggerLabel={selectedExistingTag?.name ?? 'Select tag...'}
+          isOpen={isTagMenuOpen}
+          onOpenChange={(open) => {
+            if (open !== isTagMenuOpen) {
+              onMenuToggle();
+            }
+          }}
+          menuId="bug-report-tag-menu"
+          align="left"
+          variant="block"
+        >
+          <div className="bug-report-tag-picker__list">
+            {tags.map((tag) => (
+              <button
+                key={tag.id}
+                type="button"
+                role="menuitem"
+                className={`dropdown-menu__item ${String(selectedExistingTagId) === String(tag.id) ? 'is-selected' : ''}`}
+                onClick={() => onExistingTagSelect(tag.id)}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
 
-          {isTagMenuOpen && (
-            <div className="bug-report-tag-picker__menu">
-              <div className="bug-report-tag-picker__list">
-                {tags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    className={String(selectedExistingTagId) === String(tag.id) ? 'is-selected' : ''}
-                    onClick={() => onExistingTagSelect(tag.id)}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
-              </div>
-
-              <div className="bug-report-tag-picker__create">
-                <span>Create tag</span>
-                <div>
-                  <input
-                    value={newTagName}
-                    onChange={(event) => onNewTagNameChange(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        onNewTagCreate();
-                      }
-                    }}
-                    placeholder="New tag name..."
-                  />
-                  <button type="button" onClick={onNewTagCreate} disabled={!newTagName.trim()}>
-                    Create
-                  </button>
-                </div>
-              </div>
+          <div className="bug-report-tag-picker__create">
+            <span>Create tag</span>
+            <div>
+              <input
+                value={newTagName}
+                onChange={(event) => onNewTagNameChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    onNewTagCreate();
+                  }
+                }}
+                placeholder="New tag name..."
+              />
+              <button type="button" onClick={onNewTagCreate} disabled={!newTagName.trim()}>
+                Create
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        </DropdownMenu>
         <button
           type="button"
           onClick={onExistingTagAdd}

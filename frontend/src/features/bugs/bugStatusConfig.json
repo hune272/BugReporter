@@ -1,0 +1,5 @@
+{
+  "RECEIVED": { "label": "RECEIVED", "modifier": "received" },
+  "IN_PROGRESS": { "label": "IN PROGRESS", "modifier": "in_progress" },
+  "SOLVED": { "label": "SOLVED", "modifier": "solved" }
+}

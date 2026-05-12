@@ -24,7 +24,7 @@ public class Comment {
     @Column(nullable = false)
     private String comment;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String imageUrl;
 
     @ManyToOne
@@ -37,7 +37,7 @@ public class Comment {
     private Bug bug;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

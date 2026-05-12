@@ -79,7 +79,7 @@ class TagControllerTest {
         TagCreateRequest request = new TagCreateRequest("backend");
 
         when(tagService.createTag(request)).thenReturn(tagSummary);
-        ResponseEntity<?> result = tagController.addTag(request);
+        ResponseEntity<?> result = tagController.addTag(request, 1L);
         assertEquals(201, result.getStatusCode().value());
     }
 
@@ -88,7 +88,7 @@ class TagControllerTest {
         TagCreateRequest request = new TagCreateRequest("backend");
 
         when(tagService.createTag(request)).thenThrow(new IllegalStateException("Exists"));
-        ResponseEntity<?> result = tagController.addTag(request);
+        ResponseEntity<?> result = tagController.addTag(request, 1L);
         assertEquals(409, result.getStatusCode().value());
     }
 
@@ -98,7 +98,7 @@ class TagControllerTest {
         TagSummary updatedTag = new TagSummary(1L, "frontend");
 
         when(tagService.updateTag(1L, request)).thenReturn(updatedTag);
-        ResponseEntity<?> result = tagController.updateTag(1L, request);
+        ResponseEntity<?> result = tagController.updateTag(1L, request, 1L);
         assertEquals(200, result.getStatusCode().value());
     }
 
@@ -107,21 +107,21 @@ class TagControllerTest {
         TagCreateRequest request = new TagCreateRequest("backend");
 
         when(tagService.updateTag(99L, request)).thenThrow(new RuntimeException("Not found"));
-        ResponseEntity<?> result = tagController.updateTag(99L, request);
+        ResponseEntity<?> result = tagController.updateTag(99L, request, 1L);
         assertEquals(404, result.getStatusCode().value());
     }
 
     @Test
     void deleteTag() {
         doNothing().when(tagService).deleteTag(1L);
-        ResponseEntity<?> result = tagController.deleteTag(1L);
+        ResponseEntity<?> result = tagController.deleteTag(1L, 1L);
         assertEquals(204, result.getStatusCode().value());
     }
 
     @Test
     void deleteTag_notFound() {
         doThrow(new RuntimeException("Not found")).when(tagService).deleteTag(99L);
-        ResponseEntity<?> result = tagController.deleteTag(99L);
+        ResponseEntity<?> result = tagController.deleteTag(99L, 1L);
         assertEquals(404, result.getStatusCode().value());
     }
 }

@@ -1,6 +1,8 @@
 package com.bug_reporter.backend.controller;
 
 import com.bug_reporter.backend.dto.request.UserUpdateRequest;
+import com.bug_reporter.backend.dto.response.PageResponse;
+import com.bug_reporter.backend.dto.response.TopHunterResponse;
 import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.service.UserService;
 import jakarta.validation.Valid;
@@ -15,7 +17,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin
 public class UserController {
     private final UserService userService;
 
@@ -25,27 +26,30 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers(
+    public ResponseEntity<?> getAllUsers(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Integer limit) {
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if (page != null || size != null) {
+            PageResponse<UserResponse> response = userService.getUserPage(
+                    search,
+                    page == null ? 0 : page,
+                    size == null ? 10 : size
+            );
+            return ResponseEntity.ok(response);
+        }
+
         if (search != null || limit != null) {
             return ResponseEntity.ok(userService.getUserResponses(search, limit));
         }
         return ResponseEntity.ok(userService.getAllUserResponses());
     }
 
-    @GetMapping("/scores")
-    public ResponseEntity<Map<Long, Double>> getUserScores() {
-        return ResponseEntity.ok(userService.getUserScores());
-    }
-
-    @GetMapping("/{id}/score")
-    public ResponseEntity<?> getUserScore(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(Map.of("userId", id, "score", userService.getUserScore(id)));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @GetMapping("/top-hunters")
+    public ResponseEntity<List<TopHunterResponse>> getTopHunters(
+            @RequestParam(defaultValue = "3") int limit) {
+        return ResponseEntity.ok(userService.getTopHunters(limit));
     }
 
     @GetMapping("/{id}")

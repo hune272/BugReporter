@@ -2,9 +2,9 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '@features/auth/hooks/useAuth.js';
 import './Sidebar.css';
 
-function Sidebar({ user }) {
-  const { logout } = useAuth();
-  const displayName = user?.username || 'Alex Developer';
+function Sidebar() {
+  const { user, logout } = useAuth();
+  const displayName = user?.username || 'User';
 
   return (
     <aside className="sidebar">
@@ -29,10 +29,20 @@ function Sidebar({ user }) {
           </span>
           Bug Feed
         </NavLink>
+        <NavLink to="/profile" className="sidebar__link">
+          <span className="sidebar__link-icon sidebar__link-icon--mine" aria-hidden="true" />
+          My Profile
+        </NavLink>
         <NavLink to="/bugs/new" className="sidebar__link">
           <span className="sidebar__link-icon sidebar__link-icon--report" aria-hidden="true" />
           Report Bug
         </NavLink>
+        {user?.role === 'MODERATOR' && (
+          <NavLink to="/moderation/users" className="sidebar__link">
+            <span className="sidebar__link-icon sidebar__link-icon--moderation" aria-hidden="true" />
+            Moderation
+          </NavLink>
+        )}
       </nav>
 
       <div className="sidebar__user">

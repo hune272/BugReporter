@@ -16,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bugs")
-@CrossOrigin
 public class BugController {
 
     private final BugService bugService;
@@ -32,16 +31,18 @@ public class BugController {
             @RequestParam(required = false) Long authorId,
             @RequestParam(required = false) Long tagId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal Long requesterId) {
 
-        return ResponseEntity.ok(bugService.getFilteredBugs(title, authorId, tagId, page, size));
+        return ResponseEntity.ok(bugService.getFilteredBugs(title, authorId, tagId, page, size, requesterId));
         //200 OK
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getBugById(@PathVariable Long id) {
+    public ResponseEntity<?> getBugById(@PathVariable Long id,
+                                        @AuthenticationPrincipal Long requesterId) {
         try {
-            return ResponseEntity.ok(bugService.findById(id));
+            return ResponseEntity.ok(bugService.findById(id, requesterId));
             //200 OK
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));

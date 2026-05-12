@@ -42,30 +42,30 @@ class CommentControllerTest {
 
     @Test
     void getAllComments() {
-        when(commentService.findAllComments()).thenReturn(List.of(commentResponse));
-        ResponseEntity<List<CommentResponse>> result = commentController.getAllComments();
+        when(commentService.findAllComments(1L)).thenReturn(List.of(commentResponse));
+        ResponseEntity<?> result = commentController.getAllComments(1L);
         assertEquals(200, result.getStatusCode().value());
-        assertEquals(1, result.getBody().size());
+        assertEquals(1, ((List<?>) result.getBody()).size());
     }
 
     @Test
     void getCommentById() {
-        when(commentService.findCommentById(1L)).thenReturn(commentResponse);
-        ResponseEntity<?> result = commentController.getCommentById(1L);
+        when(commentService.findCommentById(1L, 1L)).thenReturn(commentResponse);
+        ResponseEntity<?> result = commentController.getCommentById(1L, 1L);
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void getCommentById_notFound() {
-        when(commentService.findCommentById(99L)).thenThrow(new RuntimeException("Not found"));
-        ResponseEntity<?> result = commentController.getCommentById(99L);
+        when(commentService.findCommentById(99L, 1L)).thenThrow(new RuntimeException("Not found"));
+        ResponseEntity<?> result = commentController.getCommentById(99L, 1L);
         assertEquals(404, result.getStatusCode().value());
     }
 
     @Test
     void getCommentsByBugId() {
-        when(commentService.getCommentResponsesByBugId(2L)).thenReturn(List.of(commentResponse));
-        ResponseEntity<List<CommentResponse>> result = commentController.getCommentsByBugId(2L);
+        when(commentService.getCommentResponsesByBugId(2L, 1L, "HIGHEST_VOTES")).thenReturn(List.of(commentResponse));
+        ResponseEntity<List<CommentResponse>> result = commentController.getCommentsByBugId(2L, "HIGHEST_VOTES", 1L);
         assertEquals(200, result.getStatusCode().value());
         assertEquals(1, result.getBody().size());
     }
@@ -82,7 +82,7 @@ class CommentControllerTest {
     @Test
     void updateComment() {
         CommentUpdateRequest request = new CommentUpdateRequest("Updated", null);
-        CommentResponse updated = new CommentResponse(1L, "Updated", null, null, null, null, 0);
+        CommentResponse updated = new CommentResponse(1L, "Updated", null, null, null, null, 0, null);
 
         when(commentService.updateComment(1L, request, 1L)).thenReturn(updated);
         ResponseEntity<?> result = commentController.updateComment(1L, request, 1L);

@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bugs/{bugId}/tags")
-@CrossOrigin
 public class BugTagController {
 
     private final BugTagService bugTagService;

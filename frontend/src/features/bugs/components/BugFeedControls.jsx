@@ -1,32 +1,15 @@
 import './BugFeedControls.css';
 import SearchInput from '@shared/components/inputs/SearchInput.jsx';
+import DropdownMenu from '@shared/components/dropdown/DropdownMenu.jsx';
+import { messages } from '@shared/utils/messages.js';
 
-function BugFeedControls({
-  searchTerm,
-  onSearchChange,
-  mineOnly,
-  onMineOnlyChange,
-  selectedUserId,
-  selectedUserLabel,
-  isUserOpen,
-  setIsUserOpen,
-  userSearchTerm,
-  setUserSearchTerm,
-  visibleUsers,
-  onUserSelect,
-  selectedTagId,
-  selectedTagLabel,
-  isTagOpen,
-  setIsTagOpen,
-  tags,
-  onTagSelect,
-}) {
+function BugFeedControls({ filters, controlState, lockMineOnly }) {
   return (
     <div className="bug-feed-controls">
       <SearchInput
         className="bug-feed-search"
-        value={searchTerm}
-        onChange={onSearchChange}
+        value={filters.searchTerm}
+        onChange={filters.updateSearchTerm}
         placeholder="Search bug titles..."
         ariaLabel="Search bugs"
       />
@@ -35,95 +18,95 @@ function BugFeedControls({
         <span>My Bugs</span>
         <input
           type="checkbox"
-          checked={mineOnly}
-          onChange={(event) => onMineOnlyChange(event.target.checked)}
+          checked={filters.mineOnly}
+          disabled={lockMineOnly}
+          onChange={(event) => filters.updateMineOnly(event.target.checked)}
         />
         <span className="bug-feed-toggle__switch" aria-hidden="true" />
       </label>
 
-      <div className="bug-user-menu">
-        <span>User</span>
+      <DropdownMenu
+        className="bug-user-menu"
+        label="User"
+        triggerLabel={controlState.selectedUserLabel}
+        isOpen={filters.isUserOpen}
+        onOpenChange={filters.setIsUserOpen}
+        onBeforeOpen={() => filters.setUserSearchTerm('')}
+        disabled={filters.mineOnly}
+        menuId="bug-user-menu"
+        align="left"
+      >
+        <SearchInput
+          className="bug-filter-menu__search"
+          value={filters.userSearchTerm}
+          onChange={filters.setUserSearchTerm}
+          placeholder="Search users..."
+          ariaLabel="Search users"
+        />
         <button
           type="button"
-          className="bug-sort-menu__trigger"
-          aria-expanded={isUserOpen}
-          disabled={mineOnly}
-          onClick={() => {
-            setUserSearchTerm('');
-            setIsUserOpen((isOpen) => !isOpen);
-          }}
+          role="menuitem"
+          className={`dropdown-menu__item ${filters.selectedUserId === 'all' ? 'is-selected' : ''}`}
+          onClick={() => filters.selectUser('all')}
         >
-          {selectedUserLabel}
-          <span className="bug-sort-menu__chevron" aria-hidden="true" />
+          All Users
         </button>
-
-        {isUserOpen && !mineOnly && (
-          <div className="bug-sort-menu__list" role="menu">
-            <SearchInput
-              className="bug-user-menu__search"
-              value={userSearchTerm}
-              onChange={setUserSearchTerm}
-              placeholder="Search users..."
-              ariaLabel="Search users"
-            />
-            <button
-              type="button"
-              className={selectedUserId === 'all' ? 'is-selected' : ''}
-              onClick={() => onUserSelect('all')}
-            >
-              All Users
-            </button>
-            {visibleUsers.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={String(selectedUserId) === String(item.id) ? 'is-selected' : ''}
-                onClick={() => onUserSelect(item.id)}
-              >
-                {item.username}
-              </button>
-            ))}
-            {visibleUsers.length === 0 && (
-              <p className="bug-user-menu__empty">No users found.</p>
-            )}
-          </div>
+        {controlState.visibleUsers.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="menuitem"
+            className={`dropdown-menu__item ${String(filters.selectedUserId) === String(item.id) ? 'is-selected' : ''}`}
+            onClick={() => filters.selectUser(item.id)}
+          >
+            {item.username}
+          </button>
+        ))}
+        {controlState.visibleUsers.length === 0 && (
+          <p className="dropdown-menu__empty">{messages.noUsers}</p>
         )}
-      </div>
+      </DropdownMenu>
 
-      <div className="bug-tag-menu">
-        <span>Tag</span>
+      <DropdownMenu
+        className="bug-tag-menu"
+        label="Tag"
+        triggerLabel={controlState.selectedTagLabel}
+        isOpen={filters.isTagOpen}
+        onOpenChange={filters.setIsTagOpen}
+        onBeforeOpen={() => filters.setTagSearchTerm('')}
+        menuId="bug-tag-menu"
+        align="left"
+      >
+        <SearchInput
+          className="bug-filter-menu__search"
+          value={filters.tagSearchTerm}
+          onChange={filters.setTagSearchTerm}
+          placeholder="Search tags..."
+          ariaLabel="Search tags"
+        />
         <button
           type="button"
-          className="bug-sort-menu__trigger"
-          aria-expanded={isTagOpen}
-          onClick={() => setIsTagOpen((isOpen) => !isOpen)}
+          role="menuitem"
+          className={`dropdown-menu__item ${filters.selectedTagId === 'all' ? 'is-selected' : ''}`}
+          onClick={() => filters.selectTag('all')}
         >
-          {selectedTagLabel}
-          <span className="bug-sort-menu__chevron" aria-hidden="true" />
+          All Tags
         </button>
-
-        {isTagOpen && (
-          <div className="bug-sort-menu__list" role="menu">
-            <button
-              type="button"
-              className={selectedTagId === 'all' ? 'is-selected' : ''}
-              onClick={() => onTagSelect('all')}
-            >
-              All Tags
-            </button>
-            {tags.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                className={String(selectedTagId) === String(tag.id) ? 'is-selected' : ''}
-                onClick={() => onTagSelect(tag.id)}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
+        {controlState.visibleTags.map((tag) => (
+          <button
+            key={tag.id}
+            type="button"
+            role="menuitem"
+            className={`dropdown-menu__item ${String(filters.selectedTagId) === String(tag.id) ? 'is-selected' : ''}`}
+            onClick={() => filters.selectTag(tag.id)}
+          >
+            {tag.name}
+          </button>
+        ))}
+        {controlState.visibleTags.length === 0 && (
+          <p className="dropdown-menu__empty">{messages.noTags}</p>
         )}
-      </div>
+      </DropdownMenu>
     </div>
   );
 }

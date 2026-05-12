@@ -1,20 +1,26 @@
 package com.bug_reporter.backend.service;
 
 import com.bug_reporter.backend.dto.request.UserUpdateRequest;
+import com.bug_reporter.backend.dto.response.PageResponse;
+import com.bug_reporter.backend.dto.response.TopHunterResponse;
 import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.dto.mapper.UserMapper;
+import com.bug_reporter.backend.repository.BugRepository;
 import com.bug_reporter.backend.repository.UserRepository;
 import com.bug_reporter.backend.repository.VoteRepository;
-import com.bug_reporter.backend.model.Vote;
+import com.bug_reporter.backend.model.enums.BugStatus;
 import com.bug_reporter.backend.model.enums.UserRole;
 import com.bug_reporter.backend.model.enums.VoteType;
+import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.bug_reporter.backend.model.User;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,24 +31,28 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final VoteRepository voteRepository;
+    private final BugRepository bugRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, VoteRepository voteRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, VoteRepository voteRepository, BugRepository bugRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.voteRepository = voteRepository;
+        this.bugRepository = bugRepository;
         this.passwordEncoder = passwordEncoder;
     }
-    //Read-only methods
+
+    @Transactional(readOnly = true)
     public List<UserResponse> getAllUserResponses() {
         return userRepository.findAll().stream()
                 .map(UserMapper::toResponse)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<UserResponse> getUserResponses(String search, Integer limit) {
         int safeLimit = limit == null ? 25 : Math.max(1, Math.min(limit, 100));
-        List<User> users;
+        Page<User> users;
         if (search == null || search.isBlank()) {
             users = userRepository.findAllByOrderByUsernameAsc(PageRequest.of(0, safeLimit));
         } else {
@@ -50,17 +60,50 @@ public class UserService {
                     search,
                     search,
                     PageRequest.of(0, safeLimit)
-            );
+                );
         }
-        return users.stream()
+        return users.getContent().stream()
                 .map(UserMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<UserResponse> getUserPage(String search, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+
+        Page<User> users;
+        if (search == null || search.isBlank()) {
+            users = userRepository.findAllByOrderByUsernameAsc(pageable);
+        } else {
+            users = userRepository.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByUsernameAsc(
+                    search,
+                    search,
+                    pageable
+            );
+        }
+
+        List<UserResponse> content = users.getContent().stream()
+                .map(UserMapper::toResponse)
+                .toList();
+
+        return PageResponse.from(users, content);
     }
 
     public Optional<UserResponse> getUserResponseById(Long id) {
         return userRepository.findById(id).map(UserMapper::toResponse);
     }
 
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUserWithScore(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        double score = calculateUserScores().getOrDefault(userId, 0.0);
+        return UserMapper.toResponse(user, score);
+    }
+
+    @Transactional
     public UserResponse updateUser(Long id, UserUpdateRequest request, Long requesterId) {
         User existingUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         User requester = getUser(requesterId);
@@ -83,6 +126,7 @@ public class UserService {
         return UserMapper.toResponse(userRepository.save(existingUser));
     }
 
+    @Transactional
     public void deleteUser(Long id, Long requesterId) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -94,6 +138,7 @@ public class UserService {
         userRepository.delete(existingUser);
     }
 
+    @Transactional
     public UserResponse banUser(Long id, Long requesterId) {
         User requester = getModerator(requesterId);
         User user = userRepository.findById(id)
@@ -104,10 +149,10 @@ public class UserService {
         }
 
         user.setBanned(true);
-        notifyUserBanned(user);
         return UserMapper.toResponse(userRepository.save(user));
     }
 
+    @Transactional
     public UserResponse unbanUser(Long id, Long requesterId) {
         getModerator(requesterId);
         User user = userRepository.findById(id)
@@ -118,37 +163,54 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public double getUserScore(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new RuntimeException("User not found with id: " + userId);
-        }
-        return calculateUserScores().getOrDefault(userId, 0.0);
-    }
-
-    @Transactional(readOnly = true)
     public Map<Long, Double> getUserScores() {
         return calculateUserScores();
+    }
+
+    public List<TopHunterResponse> getTopHunters(int limit) {
+        int safeLimit = Math.min(Math.max(limit, 1), 20);
+        Map<Long, Double> scores = calculateUserScores();
+        Map<Long, Integer> solvedCounts = getSolvedBugCountsByAuthor();
+
+        return userRepository.findAll().stream()
+                .map(user -> new TopHunterResponse(
+                        user.getId(),
+                        user.getUsername(),
+                        scores.getOrDefault(user.getId(), 0.0),
+                        solvedCounts.getOrDefault(user.getId(), 0)
+                ))
+                .sorted(Comparator.comparingDouble(TopHunterResponse::score).reversed()
+                        .thenComparing(Comparator.comparingInt(TopHunterResponse::solved).reversed()))
+                .limit(safeLimit)
+                .toList();
+    }
+
+    private Map<Long, Integer> getSolvedBugCountsByAuthor() {
+        Map<Long, Integer> counts = new HashMap<>();
+        for (Object[] row : bugRepository.countBugsByAuthorAndStatus(BugStatus.SOLVED)) {
+            counts.put((Long) row[0], ((Long) row[1]).intValue());
+        }
+        return counts;
     }
 
     private Map<Long, Double> calculateUserScores() {
         Map<Long, Double> scores = new HashMap<>();
 
-        for (Vote vote : voteRepository.findAll()) {
-            boolean upvote = vote.getType() == VoteType.UPVOTE;
+        for (Object[] row : voteRepository.findVoteScoreData()) {
+            VoteType type = (VoteType) row[0];
+            Long bugAuthorId = (Long) row[1];
+            Long commentAuthorId = (Long) row[2];
+            Long userId = (Long) row[3];
+            boolean upvote = type == VoteType.UPVOTE;
 
-            if (vote.getBug() != null && vote.getBug().getAuthor() != null) {
-                Long authorId = vote.getBug().getAuthor().getId();
-                double delta = upvote ? 2.5 : -1.5;
-                scores.merge(authorId, delta, Double::sum);
+            if (bugAuthorId != null) {
+                scores.merge(bugAuthorId, upvote ? 2.5 : -1.5, Double::sum);
             }
 
-            if (vote.getComment() != null && vote.getComment().getAuthor() != null) {
-                Long authorId = vote.getComment().getAuthor().getId();
-                double delta = upvote ? 5.0 : -2.5;
-                scores.merge(authorId, delta, Double::sum);
-
-                if (!upvote && vote.getUser() != null && !vote.getUser().getId().equals(authorId)) {
-                    scores.merge(vote.getUser().getId(), -1.5, Double::sum);
+            if (commentAuthorId != null) {
+                scores.merge(commentAuthorId, upvote ? 5.0 : -2.5, Double::sum);
+                if (!upvote && userId != null && !userId.equals(commentAuthorId)) {
+                    scores.merge(userId, -1.5, Double::sum);
                 }
             }
         }
@@ -170,10 +232,5 @@ public class UserService {
         }
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-    }
-
-    private void notifyUserBanned(User user) {
-        System.out.println("Email notification: user " + user.getEmail() + " was banned.");
-        System.out.println("SMS notification: user " + user.getUsername() + " was banned.");
     }
 }

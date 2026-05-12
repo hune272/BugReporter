@@ -14,6 +14,7 @@ public record BugCreateRequest(
         @NotBlank(message = "Text is required")
         String text,
 
+        @Size(max = 500, message = "Picture URL must be at most 500 characters")
         String picture,
 
         @NotEmpty(message = "At least one tag is required")

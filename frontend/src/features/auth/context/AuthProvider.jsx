@@ -1,7 +1,8 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useIsRestoring, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import { authKeys } from '@shared/api/queryKeys.js';
-import {authApi} from '../api.js';
+import { STALE_TIMES } from '@shared/utils/cacheConfig.js';
+import {authService} from '../services/authService.js';
 import {AuthContext} from './AuthContext.jsx';
 
 function AuthProvider({children}) {
@@ -11,13 +12,13 @@ function AuthProvider({children}) {
 
     const sessionQuery = useQuery({
         queryKey: authKeys.me,
-        queryFn: authApi.checkSession,
-        staleTime: 30_000,
+        queryFn: authService.checkSession,
+        staleTime: STALE_TIMES.short,
         retry: false,
     });
 
     const loginMutation = useMutation({
-        mutationFn: authApi.login,
+        mutationFn: authService.login,
         onSuccess: (result, variables) => {
             if (!result.success) return;
             const nextUser = result.user ?? {email: variables.email};
@@ -30,7 +31,7 @@ function AuthProvider({children}) {
     });
 
     const logoutMutation = useMutation({
-        mutationFn: authApi.logout,
+        mutationFn: authService.logout,
         onSuccess: () => {
             setUser(null);
             queryClient.setQueryData(authKeys.me, {authenticated: false});

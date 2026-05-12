@@ -4,6 +4,7 @@ import com.bug_reporter.backend.dto.request.LoginRequest;
 import com.bug_reporter.backend.dto.request.RegisterRequest;
 import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.service.AuthService;
+import com.bug_reporter.backend.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -24,10 +25,12 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     @Autowired
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserService userService) {
         this.authService = authService;
+        this.userService = userService;
     }
 
     @PostMapping("/register")
@@ -35,10 +38,8 @@ public class AuthController {
         try {
             UserResponse user = authService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(user);
-            //201 Created
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-            //400 Bad Request
         }
     }
 
@@ -49,13 +50,10 @@ public class AuthController {
         try {
             UserResponse user = authService.login(request, httpRequest, httpResponse);
             return ResponseEntity.ok(user);
-            //200 OK
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-            //403 Forbidden
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
-            //401 Unauthorized
         }
     }
 
@@ -63,7 +61,6 @@ public class AuthController {
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         authService.logout(request);
         return ResponseEntity.noContent().build();
-        //204 No Content
     }
 
     @GetMapping("/me")
@@ -71,7 +68,6 @@ public class AuthController {
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
         }
-
-        return ResponseEntity.ok(authService.getCurrentUser(userId));
+        return ResponseEntity.ok(userService.getCurrentUserWithScore(userId));
     }
 }
