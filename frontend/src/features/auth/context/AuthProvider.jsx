@@ -38,6 +38,10 @@ function AuthProvider({children}) {
         },
     });
 
+    const registerMutation = useMutation({
+        mutationFn: authApi.register,
+    });
+
     useEffect(() => {
         function handleUnauthorized() {
             setUser(null);
@@ -52,6 +56,10 @@ function AuthProvider({children}) {
         return loginMutation.mutateAsync({email, password});
     }, [loginMutation]);
 
+    const register = useCallback(async ({username, email, password}) => {
+        return registerMutation.mutateAsync({username, email, password});
+    }, [registerMutation]);
+
     const logout = useCallback(async () => {
         await logoutMutation.mutateAsync();
     }, [logoutMutation]);
@@ -62,11 +70,12 @@ function AuthProvider({children}) {
         isRestoring ||
         (sessionQuery.isPending && user === undefined) ||
         loginMutation.isPending ||
-        logoutMutation.isPending;
+        logoutMutation.isPending ||
+        registerMutation.isPending;
 
     const value = useMemo(
-        () => ({user: currentUser, isLoading, login, logout}),
-        [currentUser, isLoading, login, logout],
+        () => ({user: currentUser, isLoading, login, logout, register}),
+        [currentUser, isLoading, login, logout, register],
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,8 +1,12 @@
 {
   "title": "Bug Reporter",
-  "alertTitle": "ACCESS RESTRICTED",
-  "alertMessage": "Your account has been flagged for a policy violation. Please contact your system administrator or refer to the v2.4.0-stable security documentation.",
+  "subtitle": "Create your operative account",
   "fields": {
+    "username": {
+      "label": "USERNAME",
+      "placeholder": "e.g. agent_smith",
+      "icon": "user"
+    },
     "email": {
       "label": "EMAIL",
       "placeholder": "e.g. user@example.com",
@@ -12,14 +16,29 @@
       "label": "PASSWORD",
       "placeholder": "",
       "icon": "lock"
+    },
+    "confirmPassword": {
+      "label": "CONFIRM PASSWORD",
+      "placeholder": "",
+      "icon": "lock"
     }
   },
-  "submitLabel": "INITIALIZE SESSION",
-  "submittingLabel": "AUTHENTICATING...",
-  "registerPrompt": "New operative?",
-  "registerLinkLabel": "Register User Account",
-  "registerHref": "/register",
+  "submitLabel": "REGISTER ACCOUNT",
+  "submittingLabel": "REGISTERING...",
+  "loginPrompt": "Already registered?",
+  "loginLinkLabel": "Return to Login",
+  "loginHref": "/login",
+  "successMessage": "Account created. Redirecting to login...",
   "validation": {
+    "username": {
+      "minLength": 3,
+      "maxLength": 32,
+      "messages": {
+        "required": "Username is required.",
+        "minLength": "Username must be at least 3 characters.",
+        "maxLength": "Username must be at most 32 characters."
+      }
+    },
     "email": {
       "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
       "messages": {
@@ -33,10 +52,15 @@
         "required": "Password is required.",
         "minLength": "Password must be at least 6 characters."
       }
+    },
+    "confirmPassword": {
+      "messages": {
+        "required": "Please confirm your password.",
+        "mismatch": "Passwords do not match."
+      }
     }
   },
   "errors": {
-    "invalidCredentials": "Invalid credentials. Verify your email and password.",
     "network": "Unable to reach authentication server. Check your connection.",
     "unknown": "An unexpected error occurred. Please try again."
   },

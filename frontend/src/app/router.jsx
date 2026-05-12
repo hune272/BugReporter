@@ -6,13 +6,15 @@ import {
   BugDetailRoute,
   BugListRoute,
   BugReportRoute,
-  LoginRoute,
   ModeratorUsersRoute,
   ProfileRoute,
 } from './routeElements.jsx';
+import LoginPage from '@features/auth/pages/LoginPage.jsx';
+import RegisterPage from '@features/auth/pages/RegisterPage.jsx';
 
 export const router = createBrowserRouter([
-  { path: '/login', element: <LoginRoute />, errorElement: <AppErrorBoundary /> },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/register', element: <RegisterPage /> },
 
   {
     element: (

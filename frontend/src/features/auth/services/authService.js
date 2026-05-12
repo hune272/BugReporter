@@ -15,7 +15,19 @@ function buildLoginBody(email, password) {
   return JSON.stringify({ email, password });
 }
 
-export const authService = {
+export const authApi = {
+  async register({ username, email, password }) {
+    const result = await apiRequest(ENDPOINTS.register, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    });
+    if (result.success) {
+      return { success: true, status: result.status, user: result.data };
+    }
+    return result;
+  },
+
   async login({ email, password }) {
     const result = await apiRequest(ENDPOINTS.login, {
       method: 'POST',
@@ -41,3 +53,5 @@ export const authService = {
     await apiRequest(ENDPOINTS.logout, { method: 'POST' });
   },
 };
+
+export const __testing__ = { LOGIN_CONTENT_TYPE };

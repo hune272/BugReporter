@@ -26,11 +26,15 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final HttpSessionSecurityContextRepository securityContextRepository;
 
     @Autowired
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       HttpSessionSecurityContextRepository securityContextRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.securityContextRepository = securityContextRepository;
     }
 
     public UserResponse register(RegisterRequest request) {
@@ -74,11 +78,11 @@ public class AuthService {
         context.setAuthentication(authToken);
         SecurityContextHolder.setContext(context);
 
-        HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
         securityContextRepository.saveContext(context, request, response);
-        request.getSession(true).setAttribute("userId", user.getId());
-        request.getSession(true).setAttribute("userEmail", user.getEmail());
-        request.getSession(true).setAttribute("userRole", user.getRole().name());
+        HttpSession session = request.getSession(true);
+        session.setAttribute("userId", user.getId());
+        session.setAttribute("userEmail", user.getEmail());
+        session.setAttribute("userRole", user.getRole().name());
 
         return UserMapper.toResponse(user);
     }
