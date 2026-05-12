@@ -1,23 +1,51 @@
 import FormField from '@shared/components/forms/FormField.jsx';
 import './LoginForm.css';
 
-function LoginForm({
+function RegisterForm({
   config,
+  username,
   email,
   password,
+  confirmPassword,
   isLoading,
   fieldErrors,
   errorMessage,
+  successMessage,
+  onUsernameChange,
   onEmailChange,
   onPasswordChange,
+  onConfirmPasswordChange,
   onSubmit,
 }) {
   const { fields, submitLabel, submittingLabel } = config;
   const isSubmitDisabled =
-    isLoading || email.trim().length === 0 || password.length === 0;
+    isLoading ||
+    username.trim().length === 0 ||
+    email.trim().length === 0 ||
+    password.length === 0 ||
+    confirmPassword.length === 0;
 
   return (
     <form className="login-form" onSubmit={onSubmit} noValidate>
+      <FormField
+        id="username"
+        label={fields.username.label}
+        type="text"
+        value={username}
+        onChange={onUsernameChange}
+        placeholder={fields.username.placeholder}
+        iconName={fields.username.icon}
+        monospacePlaceholder
+        autoComplete="username"
+        disabled={isLoading}
+        required
+      />
+      {fieldErrors.username && (
+        <p className="login-form__field-error" role="alert">
+          {fieldErrors.username}
+        </p>
+      )}
+
       <FormField
         id="email"
         label={fields.email.label}
@@ -45,7 +73,7 @@ function LoginForm({
         onChange={onPasswordChange}
         placeholder={fields.password.placeholder}
         iconName={fields.password.icon}
-        autoComplete="current-password"
+        autoComplete="new-password"
         disabled={isLoading}
         required
       />
@@ -55,9 +83,41 @@ function LoginForm({
         </p>
       )}
 
+      <FormField
+        id="confirmPassword"
+        label={fields.confirmPassword.label}
+        type="password"
+        value={confirmPassword}
+        onChange={onConfirmPasswordChange}
+        placeholder={fields.confirmPassword.placeholder}
+        iconName={fields.confirmPassword.icon}
+        autoComplete="new-password"
+        disabled={isLoading}
+        required
+      />
+      {fieldErrors.confirmPassword && (
+        <p className="login-form__field-error" role="alert">
+          {fieldErrors.confirmPassword}
+        </p>
+      )}
+
       {errorMessage && (
         <p className="login-form__submit-error" role="alert">
           {errorMessage}
+        </p>
+      )}
+
+      {successMessage && (
+        <p
+          className="login-form__submit-error"
+          role="status"
+          style={{
+            color: '#065f46',
+            background: '#d1fae5',
+            borderColor: 'rgba(5, 150, 105, 0.25)',
+          }}
+        >
+          {successMessage}
         </p>
       )}
 
@@ -87,4 +147,4 @@ function LoginForm({
   );
 }
 
-export default LoginForm;
+export default RegisterForm;
