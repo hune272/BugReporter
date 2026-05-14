@@ -1,19 +1,19 @@
-import { apiRequest } from '@shared/api/client.js';
-import { ENDPOINTS } from '@shared/utils/constants.js';
+import {apiRequest} from '@shared/api/client.js';
+import {ENDPOINTS} from '@shared/utils/constants.js';
 
 export const tagService = {
-  getTags() {
-    return apiRequest(ENDPOINTS.tags);
-  },
+    getTags() {
+        return apiRequest(ENDPOINTS.tags);
+    },
 
-  getTagUsage() {
-    return apiRequest(ENDPOINTS.tagUsage);
-  },
+    getTagUsage() {
+        return apiRequest(ENDPOINTS.tagUsage);
+    },
 
-  createTag(data) {
-    return apiRequest(ENDPOINTS.tags, {
-      method: 'POST',
-      body: data,
-    });
-  },
+    createTag(data) {
+        return apiRequest(ENDPOINTS.tags, {
+            method: 'POST',
+            body: data,
+        });
+    },
 };

@@ -1,12 +1,12 @@
-import { useCallback, useState } from 'react';
+import {useCallback, useState} from 'react';
 
 export function useActionMessage() {
-  const [message, setMessage] = useState('');
-  const clearMessage = useCallback(() => setMessage(''), []);
+    const [message, setMessage] = useState('');
+    const clearMessage = useCallback(() => setMessage(''), []);
 
-  return {
-    message,
-    setMessage,
-    clearMessage,
-  };
+    return {
+        message,
+        setMessage,
+        clearMessage,
+    };
 }

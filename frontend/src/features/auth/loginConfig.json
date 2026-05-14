@@ -1,7 +1,8 @@
 {
   "title": "Bug Reporter",
-  "alertTitle": "ACCESS RESTRICTED",
-  "alertMessage": "Your account has been flagged for a policy violation. Please contact your system administrator or refer to the v2.4.0-stable security documentation.",
+  "subtitle": "Authenticate to your operative console",
+  "alertTitle": "Account suspended",
+  "alertMessage": "Your account has been suspended. Please contact an administrator for assistance.",
   "fields": {
     "email": {
       "label": "EMAIL",
@@ -39,12 +40,5 @@
     "invalidCredentials": "Invalid credentials. Verify your email and password.",
     "network": "Unable to reach authentication server. Check your connection.",
     "unknown": "An unexpected error occurred. Please try again."
-  },
-  "footer": {
-    "metaItems": [
-      { "icon": "lock", "text": "AES-256 ENCRYPTED" },
-      { "icon": "package", "text": "V2.4.0-STABLE" }
-    ],
-    "disclaimer": "Proprietary software for authorized personnel only. Monitoring is active. Unauthorized access attempts are logged and reported to the QA Lead."
   }
 }

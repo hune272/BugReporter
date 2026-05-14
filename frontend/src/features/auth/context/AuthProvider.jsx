@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useIsRestoring, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import { authKeys } from '@shared/api/queryKeys.js';
-import { STALE_TIMES } from '@shared/utils/cacheConfig.js';
+import {authKeys} from '@shared/api/queryKeys.js';
+import {STALE_TIMES} from '@shared/utils/cacheConfig.js';
 import {authService} from '../services/authService.js';
 import {AuthContext} from './AuthContext.jsx';
 
@@ -39,7 +39,7 @@ function AuthProvider({children}) {
     });
 
     const registerMutation = useMutation({
-        mutationFn: authApi.register,
+        mutationFn: authService.register,
     });
 
     useEffect(() => {

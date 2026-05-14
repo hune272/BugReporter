@@ -28,15 +28,14 @@
   "loginPrompt": "Already registered?",
   "loginLinkLabel": "Return to Login",
   "loginHref": "/login",
-  "successMessage": "Account created. Redirecting to login...",
   "validation": {
     "username": {
       "minLength": 3,
-      "maxLength": 32,
+      "maxLength": 50,
       "messages": {
         "required": "Username is required.",
         "minLength": "Username must be at least 3 characters.",
-        "maxLength": "Username must be at most 32 characters."
+        "maxLength": "Username must be at most 50 characters."
       }
     },
     "email": {
@@ -63,12 +62,5 @@
   "errors": {
     "network": "Unable to reach authentication server. Check your connection.",
     "unknown": "An unexpected error occurred. Please try again."
-  },
-  "footer": {
-    "metaItems": [
-      { "icon": "lock", "text": "AES-256 ENCRYPTED" },
-      { "icon": "package", "text": "V2.4.0-STABLE" }
-    ],
-    "disclaimer": "Proprietary software for authorized personnel only. Monitoring is active. Unauthorized access attempts are logged and reported to the QA Lead."
   }
 }

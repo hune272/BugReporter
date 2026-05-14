@@ -1,14 +1,14 @@
-import { Outlet } from 'react-router-dom';
+import {Outlet} from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import './AppLayout.css';
 
-function AppLayout({ children }) {
+function AppLayout({children}) {
     return (
         <div className="app-layout">
-            <Sidebar />
+            <Sidebar/>
 
             <main className="app-layout__content">
-                {children ?? <Outlet />}
+                {children ?? <Outlet/>}
             </main>
         </div>
     );

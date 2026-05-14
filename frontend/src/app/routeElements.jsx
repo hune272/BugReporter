@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import {lazy, Suspense} from 'react';
 import ProtectedRoute from '@app/ProtectedRoute.jsx';
 import LoadingSkeleton from '@shared/components/feedback/LoadingSkeleton.jsx';
 
@@ -9,60 +9,60 @@ const BugReportPage = lazy(() => import('@features/bugs/pages/BugReportPage.jsx'
 const ProfilePage = lazy(() => import('@features/users/pages/ProfilePage.jsx'));
 const ModeratorUsersPage = lazy(() => import('@features/users/pages/ModeratorUsersPage.jsx'));
 
-function LazyRoute({ children }) {
-  return (
-    <Suspense fallback={<LoadingSkeleton count={2} />}>
-      {children}
-    </Suspense>
-  );
+function LazyRoute({children}) {
+    return (
+        <Suspense fallback={<LoadingSkeleton count={2}/>}>
+            {children}
+        </Suspense>
+    );
 }
 
 export function LoginRoute() {
-  return (
-    <LazyRoute>
-      <LoginPage />
-    </LazyRoute>
-  );
+    return (
+        <LazyRoute>
+            <LoginPage/>
+        </LazyRoute>
+    );
 }
 
 export function BugListRoute() {
-  return (
-    <LazyRoute>
-      <BugListPage />
-    </LazyRoute>
-  );
+    return (
+        <LazyRoute>
+            <BugListPage/>
+        </LazyRoute>
+    );
 }
 
 export function ProfileRoute() {
-  return (
-    <LazyRoute>
-      <ProfilePage />
-    </LazyRoute>
-  );
+    return (
+        <LazyRoute>
+            <ProfilePage/>
+        </LazyRoute>
+    );
 }
 
 export function BugReportRoute() {
-  return (
-    <LazyRoute>
-      <BugReportPage />
-    </LazyRoute>
-  );
+    return (
+        <LazyRoute>
+            <BugReportPage/>
+        </LazyRoute>
+    );
 }
 
 export function BugDetailRoute() {
-  return (
-    <LazyRoute>
-      <BugDetailPage />
-    </LazyRoute>
-  );
+    return (
+        <LazyRoute>
+            <BugDetailPage/>
+        </LazyRoute>
+    );
 }
 
 export function ModeratorUsersRoute() {
-  return (
-    <LazyRoute>
-      <ProtectedRoute requireRole="MODERATOR">
-        <ModeratorUsersPage />
-      </ProtectedRoute>
-    </LazyRoute>
-  );
+    return (
+        <LazyRoute>
+            <ProtectedRoute requireRole="MODERATOR">
+                <ModeratorUsersPage/>
+            </ProtectedRoute>
+        </LazyRoute>
+    );
 }

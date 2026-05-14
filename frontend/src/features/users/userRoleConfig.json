@@ -1,4 +1,10 @@
 {
-  "MODERATOR": { "label": "MODERATOR", "modifier": "moderator" },
-  "USER": { "label": "USER", "modifier": "user" }
+  "MODERATOR": {
+    "label": "MODERATOR",
+    "modifier": "moderator"
+  },
+  "USER": {
+    "label": "USER",
+    "modifier": "user"
+  }
 }
