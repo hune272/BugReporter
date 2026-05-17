@@ -27,14 +27,17 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final HttpSessionSecurityContextRepository securityContextRepository;
+    private final EmailClient emailClient;
 
     @Autowired
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
-                       HttpSessionSecurityContextRepository securityContextRepository) {
+                       HttpSessionSecurityContextRepository securityContextRepository,
+                       EmailClient emailClient) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.securityContextRepository = securityContextRepository;
+        this.emailClient = emailClient;
     }
 
     public UserResponse register(RegisterRequest request) {
@@ -59,7 +62,16 @@ public class AuthService {
         user.setEmail(request.email().trim());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(UserRole.USER);
-        return UserMapper.toResponse(userRepository.save(user));
+        userRepository.save(user);
+        emailClient.send(
+            user.getEmail(),
+            "Welcome to BugReporter!",
+            "Hello " + user.getUsername() + ",\n\n" +
+            "Thank you for registering on BugReporter!\n" +
+            "You can now report bugs, comment, and vote.\n\n" +
+            "The BugReporter Team"
+        );
+        return UserMapper.toResponse(user);
     }
 
     public UserResponse login(LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response) {
