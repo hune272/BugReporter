@@ -33,13 +33,27 @@ public class UserService {
     private final VoteRepository voteRepository;
     private final BugRepository bugRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailClient emailClient;
 
     @Autowired
-    public UserService(UserRepository userRepository, VoteRepository voteRepository, BugRepository bugRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, VoteRepository voteRepository, BugRepository bugRepository, PasswordEncoder passwordEncoder, EmailClient emailClient) {
         this.userRepository = userRepository;
         this.voteRepository = voteRepository;
         this.bugRepository = bugRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailClient = emailClient;
+    }
+
+    private void notifyUserBanned(User user) {
+        emailClient.send(
+            user.getEmail(),
+            "BugReporter: Your account has been suspended",
+            "Hello " + user.getUsername() + ",\n\n" +
+            "Your BugReporter account has been suspended by a moderator " +
+            "due to a violation of community guidelines.\n\n" +
+            "If you believe this is a mistake, please contact support.\n\n" +
+            "The BugReporter Team"
+        );
     }
 
     @Transactional(readOnly = true)
@@ -149,7 +163,9 @@ public class UserService {
         }
 
         user.setBanned(true);
-        return UserMapper.toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        notifyUserBanned(saved);
+        return UserMapper.toResponse(saved);
     }
 
     @Transactional
