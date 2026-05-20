@@ -12,6 +12,11 @@
       "placeholder": "e.g. user@example.com",
       "icon": "user"
     },
+    "phoneNumber": {
+      "label": "PHONE NUMBER",
+      "placeholder": "e.g. 0712345678",
+      "icon": "user"
+    },
     "password": {
       "label": "PASSWORD",
       "placeholder": "",
@@ -43,6 +48,13 @@
       "messages": {
         "required": "Email is required.",
         "pattern": "Enter a valid email address."
+      }
+    },
+    "phoneNumber": {
+      "pattern": "^(0[0-9]{9}|\\+40[0-9]{9})$",
+      "messages": {
+        "required": "Phone number is required.",
+        "pattern": "Enter a Romanian phone number, e.g. 0712345678 or +40712345678."
       }
     },
     "password": {

@@ -39,6 +39,9 @@ public class User {
 
     @Column(nullable = false)
     private boolean banned = false;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
     @JsonIgnore
     //Relationships
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -71,6 +74,7 @@ public class User {
                 ", email='" + email + '\'' +
                 ", role=" + role +
                 ", banned=" + banned +
+                ", phoneNumber='" + phoneNumber + '\'' +
                 '}';
     }
 }

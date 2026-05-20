@@ -6,6 +6,7 @@ function RegisterForm({
                           config,
                           username,
                           email,
+                          phoneNumber,
                           password,
                           confirmPassword,
                           isLoading,
@@ -13,6 +14,7 @@ function RegisterForm({
                           errorMessage,
                           onUsernameChange,
                           onEmailChange,
+                          onPhoneNumberChange,
                           onPasswordChange,
                           onConfirmPasswordChange,
                           onSubmit,
@@ -22,6 +24,7 @@ function RegisterForm({
         isLoading ||
         username.trim().length === 0 ||
         email.trim().length === 0 ||
+        phoneNumber.trim().length === 0 ||
         password.length === 0 ||
         confirmPassword.length === 0;
 
@@ -62,6 +65,25 @@ function RegisterForm({
             {fieldErrors.email && (
                 <p className="login-form__field-error" role="alert">
                     {fieldErrors.email}
+                </p>
+            )}
+
+            <FormField
+                id="phoneNumber"
+                label={fields.phoneNumber.label}
+                type="tel"
+                value={phoneNumber}
+                onChange={onPhoneNumberChange}
+                placeholder={fields.phoneNumber.placeholder}
+                iconName={fields.phoneNumber.icon}
+                monospacePlaceholder
+                autoComplete="tel"
+                disabled={isLoading}
+                required
+            />
+            {fieldErrors.phoneNumber && (
+                <p className="login-form__field-error" role="alert">
+                    {fieldErrors.phoneNumber}
                 </p>
             )}
 

@@ -6,6 +6,7 @@ import com.bug_reporter.backend.dto.response.UserResponse;
 import com.bug_reporter.backend.model.User;
 import com.bug_reporter.backend.model.enums.UserRole;
 import com.bug_reporter.backend.repository.UserRepository;
+import com.bug_reporter.backend.service.EmailClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -47,6 +48,9 @@ public class AuthServiceTest {
     @Mock
     private HttpSession session;
 
+    @Mock
+    private EmailClient emailClient;
+
     @InjectMocks
     private AuthService authService;
 
@@ -69,7 +73,7 @@ public class AuthServiceTest {
         when(userRepository.existsByUsername("testUser")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        UserResponse result = authService.register(new RegisterRequest("testUser", "test@example.com", "password123"));
+        UserResponse result = authService.register(new RegisterRequest("testUser", "test@example.com", "password123", "+40712345678"));
 
         assertNotNull(result);
         assertEquals("testUser", result.username());
@@ -79,17 +83,17 @@ public class AuthServiceTest {
 
     @Test
     void register_nullUsername() {
-        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest(null, "test@example.com", "password")));
+        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest(null, "test@example.com", "password", "+40712345678")));
     }
 
     @Test
     void register_emptyEmail() {
-        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest("user", "", "password")));
+        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest("user", "", "password", "+40712345678")));
     }
 
     @Test
     void register_emptyPassword() {
-        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest("user", "test@example.com", "")));
+        assertThrows(RuntimeException.class, () -> authService.register(new RegisterRequest("user", "test@example.com", "", "+40712345678")));
     }
 
     @Test

@@ -76,3 +76,26 @@ jobs:
       - name: Compile and validate
         continue-on-error: true
         run: mvn -B clean compile
+
+  smsservice-compile:
+    name: SmsService Compile Check (Maven)
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: SmsService
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: maven
+
+      - name: Compile and validate
+        continue-on-error: true
+        run: mvn -B clean compile

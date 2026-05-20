@@ -2,11 +2,11 @@ import {apiRequest} from '@shared/api/client.js';
 import {ENDPOINTS} from '@shared/utils/constants.js';
 
 export const authService = {
-    async register({username, email, password}) {
+    async register({username, email, phoneNumber, password}) {
         const result = await apiRequest(ENDPOINTS.register, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username, email, password}),
+            body: JSON.stringify({username, email, phoneNumber, password}),
         });
         if (result.success) {
             return {success: true, status: result.status, user: result.data};

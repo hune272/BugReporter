@@ -7,6 +7,7 @@ const defaultProps = {
     config: registerConfig,
     username: '',
     email: '',
+    phoneNumber: '',
     password: '',
     confirmPassword: '',
     isLoading: false,
@@ -14,6 +15,7 @@ const defaultProps = {
     errorMessage: '',
     onUsernameChange: vi.fn(),
     onEmailChange: vi.fn(),
+    onPhoneNumberChange: vi.fn(),
     onPasswordChange: vi.fn(),
     onConfirmPasswordChange: vi.fn(),
     onSubmit: vi.fn(),
@@ -24,10 +26,11 @@ function renderForm(props = {}) {
 }
 
 describe('RegisterForm — rendering', () => {
-    it('renders all four input fields', () => {
+    it('renders all five input fields', () => {
         renderForm();
         expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/^email/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
     });
@@ -47,14 +50,24 @@ describe('RegisterForm — rendering', () => {
         expect(screen.getByRole('button')).toBeDisabled();
     });
 
-    it('submit button is enabled when all four fields have values', () => {
-        renderForm({username: 'alice', email: 'a@b.com', password: 'secret', confirmPassword: 'secret'});
+    it('submit button is enabled when all five fields have values', () => {
+        renderForm({
+            username: 'alice',
+            email: 'a@b.com',
+            phoneNumber: '+40712345678',
+            password: 'secret',
+            confirmPassword: 'secret',
+        });
         expect(screen.getByRole('button')).not.toBeDisabled();
     });
 
     it('submit button is disabled when isLoading', () => {
         renderForm({
-            username: 'alice', email: 'a@b.com', password: 'secret', confirmPassword: 'secret',
+            username: 'alice',
+            email: 'a@b.com',
+            phoneNumber: '+40712345678',
+            password: 'secret',
+            confirmPassword: 'secret',
             isLoading: true,
         });
         expect(screen.getByRole('button')).toBeDisabled();
@@ -62,7 +75,11 @@ describe('RegisterForm — rendering', () => {
 
     it('shows loading label when isLoading', () => {
         renderForm({
-            username: 'alice', email: 'a@b.com', password: 'secret', confirmPassword: 'secret',
+            username: 'alice',
+            email: 'a@b.com',
+            phoneNumber: '+40712345678',
+            password: 'secret',
+            confirmPassword: 'secret',
             isLoading: true,
         });
         expect(screen.getByText(registerConfig.submittingLabel)).toBeInTheDocument();
@@ -78,6 +95,11 @@ describe('RegisterForm — field errors', () => {
     it('shows email field error', () => {
         renderForm({fieldErrors: {email: 'Enter a valid email address.'}});
         expect(screen.getByText('Enter a valid email address.')).toBeInTheDocument();
+    });
+
+    it('shows phoneNumber field error', () => {
+        renderForm({fieldErrors: {phoneNumber: 'Phone number is required.'}});
+        expect(screen.getByText('Phone number is required.')).toBeInTheDocument();
     });
 
     it('shows password field error', () => {
@@ -111,5 +133,12 @@ describe('RegisterForm — interactions', () => {
         renderForm({onEmailChange});
         fireEvent.change(screen.getByLabelText(/^email/i), {target: {value: 'bob@b.com'}});
         expect(onEmailChange).toHaveBeenCalledWith('bob@b.com');
+    });
+
+    it('calls onPhoneNumberChange when phone input changes', () => {
+        const onPhoneNumberChange = vi.fn();
+        renderForm({onPhoneNumberChange});
+        fireEvent.change(screen.getByLabelText(/phone number/i), {target: {value: '+40712345678'}});
+        expect(onPhoneNumberChange).toHaveBeenCalledWith('+40712345678');
     });
 });

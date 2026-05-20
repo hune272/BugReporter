@@ -10,6 +10,7 @@ function RegisterPage() {
     const {
         username,
         email,
+        phoneNumber,
         password,
         confirmPassword,
         isLoading,
@@ -17,6 +18,7 @@ function RegisterPage() {
         errorMessage,
         setUsername,
         setEmail,
+        setPhoneNumber,
         setPassword,
         setConfirmPassword,
         handleSubmit,
@@ -31,6 +33,7 @@ function RegisterPage() {
                     config={registerConfig}
                     username={username}
                     email={email}
+                    phoneNumber={phoneNumber}
                     password={password}
                     confirmPassword={confirmPassword}
                     isLoading={isLoading}
@@ -38,6 +41,7 @@ function RegisterPage() {
                     errorMessage={errorMessage}
                     onUsernameChange={setUsername}
                     onEmailChange={setEmail}
+                    onPhoneNumberChange={setPhoneNumber}
                     onPasswordChange={setPassword}
                     onConfirmPasswordChange={setConfirmPassword}
                     onSubmit={handleSubmit}

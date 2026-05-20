@@ -105,3 +105,26 @@ jobs:
       - name: Run Maven tests
         continue-on-error: true
         run: mvn clean test
+
+  smsservice-tests:
+    name: SmsService Tests (Maven)
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: SmsService
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: maven
+
+      - name: Run Maven tests
+        continue-on-error: true
+        run: mvn clean test

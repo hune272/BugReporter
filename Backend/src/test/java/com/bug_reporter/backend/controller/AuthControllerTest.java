@@ -50,7 +50,7 @@ public class AuthControllerTest {
 
     @Test
     void register() {
-        RegisterRequest body = new RegisterRequest("testUser", "test@example.com", "password123");
+        RegisterRequest body = new RegisterRequest("testUser", "test@example.com", "password123", "+40712345678");
 
         when(authService.register(body)).thenReturn(testUserResponse);
 
@@ -63,7 +63,7 @@ public class AuthControllerTest {
 
     @Test
     void register_error() {
-        RegisterRequest body = new RegisterRequest("testUser", "test@example.com", "password123");
+        RegisterRequest body = new RegisterRequest("testUser", "test@example.com", "password123", "+40712345678");
 
         when(authService.register(body)).thenThrow(new RuntimeException("Email already exists"));
 

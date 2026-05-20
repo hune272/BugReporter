@@ -15,15 +15,17 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 const registerMock = vi.fn();
+const loginMock = vi.fn();
 
 function setup() {
-    useAuth.mockReturnValue({register: registerMock, isLoading: false});
+    useAuth.mockReturnValue({register: registerMock, login: loginMock, isLoading: false});
     return renderHook(() => useRegisterForm(registerConfig));
 }
 
 function fillValidForm(result) {
     act(() => result.current.setUsername('alice'));
     act(() => result.current.setEmail('alice@example.com'));
+    act(() => result.current.setPhoneNumber('0712345678'));
     act(() => result.current.setPassword('password123'));
     act(() => result.current.setConfirmPassword('password123'));
 }
@@ -37,6 +39,7 @@ describe('useRegisterForm — initial state', () => {
         const {result} = setup();
         expect(result.current.username).toBe('');
         expect(result.current.email).toBe('');
+        expect(result.current.phoneNumber).toBe('');
         expect(result.current.password).toBe('');
         expect(result.current.confirmPassword).toBe('');
         expect(result.current.errorMessage).toBe('');
@@ -67,9 +70,11 @@ describe('useRegisterForm — username validation', () => {
 
     it('accepts username at exactly maxLength (50)', async () => {
         registerMock.mockResolvedValue({success: true});
+        loginMock.mockResolvedValue({success: true});
         const {result} = setup();
         act(() => result.current.setUsername('a'.repeat(50)));
         act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('0712345678'));
         act(() => result.current.setPassword('password123'));
         act(() => result.current.setConfirmPassword('password123'));
         await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
@@ -94,11 +99,53 @@ describe('useRegisterForm — email validation', () => {
     });
 });
 
+describe('useRegisterForm — phoneNumber validation', () => {
+    it('sets error when phoneNumber is empty', async () => {
+        const {result} = setup();
+        act(() => result.current.setUsername('alice'));
+        act(() => result.current.setEmail('alice@example.com'));
+        await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
+        expect(result.current.fieldErrors.phoneNumber).toBeTruthy();
+    });
+
+    it('accepts E.164 format directly', async () => {
+        registerMock.mockResolvedValue({success: true});
+        loginMock.mockResolvedValue({success: true});
+        const {result} = setup();
+        act(() => result.current.setUsername('alice'));
+        act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('+40712345678'));
+        act(() => result.current.setPassword('password123'));
+        act(() => result.current.setConfirmPassword('password123'));
+        await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
+        expect(result.current.fieldErrors.phoneNumber).toBeFalsy();
+    });
+
+    it('sets error for invalid format (not Romanian)', async () => {
+        const {result} = setup();
+        act(() => result.current.setUsername('alice'));
+        act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('+12345678901'));
+        await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
+        expect(result.current.fieldErrors.phoneNumber).toBeTruthy();
+    });
+
+    it('sets error for shorter than 10 digits', async () => {
+        const {result} = setup();
+        act(() => result.current.setUsername('alice'));
+        act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('071234567'));
+        await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
+        expect(result.current.fieldErrors.phoneNumber).toBeTruthy();
+    });
+});
+
 describe('useRegisterForm — password validation', () => {
     it('sets error when password is empty', async () => {
         const {result} = setup();
         act(() => result.current.setUsername('alice'));
         act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('0712345678'));
         await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
         expect(result.current.fieldErrors.password).toBeTruthy();
     });
@@ -107,6 +154,7 @@ describe('useRegisterForm — password validation', () => {
         const {result} = setup();
         act(() => result.current.setUsername('alice'));
         act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('0712345678'));
         act(() => result.current.setPassword('abc'));
         await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
         expect(result.current.fieldErrors.password).toBeTruthy();
@@ -118,6 +166,7 @@ describe('useRegisterForm — confirmPassword validation', () => {
         const {result} = setup();
         act(() => result.current.setUsername('alice'));
         act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('0712345678'));
         act(() => result.current.setPassword('password123'));
         await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
         expect(result.current.fieldErrors.confirmPassword).toBeTruthy();
@@ -127,6 +176,7 @@ describe('useRegisterForm — confirmPassword validation', () => {
         const {result} = setup();
         act(() => result.current.setUsername('alice'));
         act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('0712345678'));
         act(() => result.current.setPassword('password123'));
         act(() => result.current.setConfirmPassword('different'));
         await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
@@ -135,8 +185,19 @@ describe('useRegisterForm — confirmPassword validation', () => {
 });
 
 describe('useRegisterForm — submit outcomes', () => {
-    it('navigates to /login on successful registration', async () => {
+    it('auto-logs in and navigates to /bugs on successful registration', async () => {
         registerMock.mockResolvedValue({success: true});
+        loginMock.mockResolvedValue({success: true});
+        const {result} = setup();
+        fillValidForm(result);
+        await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
+        expect(loginMock).toHaveBeenCalledWith({email: 'alice@example.com', password: 'password123'});
+        expect(mockNavigate).toHaveBeenCalledWith('/bugs');
+    });
+
+    it('falls back to /login if auto-login fails after register', async () => {
+        registerMock.mockResolvedValue({success: true});
+        loginMock.mockResolvedValue({success: false});
         const {result} = setup();
         fillValidForm(result);
         await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
@@ -173,16 +234,36 @@ describe('useRegisterForm — submit outcomes', () => {
         expect(result.current.errorMessage).toBe(registerConfig.errors.unknown);
     });
 
-    it('calls register with trimmed username and email', async () => {
+    it('converts Romanian local phone to E.164 before calling register', async () => {
         registerMock.mockResolvedValue({success: true});
+        loginMock.mockResolvedValue({success: true});
         const {result} = setup();
         act(() => result.current.setUsername('  alice  '));
         act(() => result.current.setEmail('  alice@example.com  '));
+        act(() => result.current.setPhoneNumber('  0773852063  '));
+        act(() => result.current.setPassword('password123'));
+        act(() => result.current.setConfirmPassword('password123'));
+        await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
+        expect(registerMock).toHaveBeenCalledWith({
+            username: 'alice',
+            email: 'alice@example.com',
+            phoneNumber: '+40773852063',
+            password: 'password123',
+        });
+    });
+
+    it('keeps E.164 phone as-is when calling register', async () => {
+        registerMock.mockResolvedValue({success: true});
+        loginMock.mockResolvedValue({success: true});
+        const {result} = setup();
+        act(() => result.current.setUsername('alice'));
+        act(() => result.current.setEmail('alice@example.com'));
+        act(() => result.current.setPhoneNumber('+40754409827'));
         act(() => result.current.setPassword('password123'));
         act(() => result.current.setConfirmPassword('password123'));
         await act(async () => result.current.handleSubmit({preventDefault: vi.fn()}));
         expect(registerMock).toHaveBeenCalledWith(
-            expect.objectContaining({username: 'alice', email: 'alice@example.com'}),
+            expect.objectContaining({phoneNumber: '+40754409827'}),
         );
     });
 });

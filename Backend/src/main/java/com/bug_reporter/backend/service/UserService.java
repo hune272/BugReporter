@@ -34,14 +34,16 @@ public class UserService {
     private final BugRepository bugRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailClient emailClient;
+    private final SmsClient smsClient;
 
     @Autowired
-    public UserService(UserRepository userRepository, VoteRepository voteRepository, BugRepository bugRepository, PasswordEncoder passwordEncoder, EmailClient emailClient) {
+    public UserService(UserRepository userRepository, VoteRepository voteRepository, BugRepository bugRepository, PasswordEncoder passwordEncoder, EmailClient emailClient, SmsClient smsClient) {
         this.userRepository = userRepository;
         this.voteRepository = voteRepository;
         this.bugRepository = bugRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailClient = emailClient;
+        this.smsClient = smsClient;
     }
 
     private void notifyUserBanned(User user) {
@@ -53,6 +55,10 @@ public class UserService {
             "due to a violation of community guidelines.\n\n" +
             "If you believe this is a mistake, please contact support.\n\n" +
             "The BugReporter Team"
+        );
+        smsClient.send(
+            user.getPhoneNumber(),
+            "BugReporter: Your account has been suspended by a moderator. Contact support if you believe this is a mistake."
         );
     }
 

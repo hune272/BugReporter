@@ -61,6 +61,7 @@ public class AuthService {
         user.setUsername(request.username().trim());
         user.setEmail(request.email().trim());
         user.setPassword(passwordEncoder.encode(request.password()));
+        user.setPhoneNumber(request.phoneNumber() == null ? null : request.phoneNumber().trim());
         user.setRole(UserRole.USER);
         userRepository.save(user);
         emailClient.send(

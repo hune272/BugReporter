@@ -2,6 +2,13 @@ import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useAuth} from './useAuth.js';
 
+function normalizePhoneToE164(phone) {
+    if (phone.startsWith('+')) {
+        return phone;
+    }
+    return '+40' + phone.substring(1);
+}
+
 function validateRegister(values, rules) {
     const errors = {};
 
@@ -23,6 +30,14 @@ function validateRegister(values, rules) {
         errors.email = emailRules.messages.pattern;
     }
 
+    const phoneNumber = values.phoneNumber.trim();
+    const phoneRules = rules.phoneNumber;
+    if (phoneNumber.length === 0) {
+        errors.phoneNumber = phoneRules.messages.required;
+    } else if (!new RegExp(phoneRules.pattern).test(phoneNumber)) {
+        errors.phoneNumber = phoneRules.messages.pattern;
+    }
+
     const pRules = rules.password;
     if (values.password.length === 0) {
         errors.password = pRules.messages.required;
@@ -41,11 +56,12 @@ function validateRegister(values, rules) {
 }
 
 export function useRegisterForm(config) {
-    const {register, isLoading} = useAuth();
+    const {register, login, isLoading} = useAuth();
     const navigate = useNavigate();
 
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
@@ -56,20 +72,27 @@ export function useRegisterForm(config) {
         setErrorMessage('');
 
         const errors = validateRegister(
-            {username, email, password, confirmPassword},
+            {username, email, phoneNumber, password, confirmPassword},
             config.validation,
         );
         setFieldErrors(errors);
         if (Object.keys(errors).length > 0) return;
 
+        const trimmedEmail = email.trim();
         const result = await register({
             username: username.trim(),
-            email: email.trim(),
+            email: trimmedEmail,
+            phoneNumber: normalizePhoneToE164(phoneNumber.trim()),
             password,
         });
 
         if (result.success) {
-            navigate('/login');
+            const loginResult = await login({email: trimmedEmail, password});
+            if (loginResult?.success) {
+                navigate('/bugs');
+            } else {
+                navigate('/login');
+            }
             return;
         }
 
@@ -83,6 +106,7 @@ export function useRegisterForm(config) {
     return {
         username,
         email,
+        phoneNumber,
         password,
         confirmPassword,
         isLoading,
@@ -90,6 +114,7 @@ export function useRegisterForm(config) {
         errorMessage,
         setUsername,
         setEmail,
+        setPhoneNumber,
         setPassword,
         setConfirmPassword,
         handleSubmit,

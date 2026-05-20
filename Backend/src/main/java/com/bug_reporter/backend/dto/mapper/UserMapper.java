@@ -21,7 +21,8 @@ public final class UserMapper {
                 user.getEmail(),
                 user.getRole(),
                 user.isBanned(),
-                score
+                score,
+                user.getPhoneNumber()
         );
     }
 

@@ -77,7 +77,7 @@ public class UserControllerTest {
     @Test
     void updateUser() {
         UserUpdateRequest request = new UserUpdateRequest("updatedName", "updated@example.com", UserRole.USER, null);
-        UserResponse updatedUser = new UserResponse(1L, "updatedName", "updated@example.com", UserRole.USER, false, 0.0);
+        UserResponse updatedUser = new UserResponse(1L, "updatedName", "updated@example.com", UserRole.USER, false, 0.0, null);
 
         when(userService.updateUser(1L, request, 1L)).thenReturn(updatedUser);
 

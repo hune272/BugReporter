@@ -2,6 +2,7 @@ package com.bug_reporter.backend.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
@@ -15,5 +16,9 @@ public record RegisterRequest(
 
         @NotBlank(message = "Password is required")
         @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
-        String password
+        String password,
+
+        @NotBlank(message = "Phone number is required")
+        @Pattern(regexp = "^\\+[1-9]\\d{6,14}$", message = "Phone number must be in E.164 format (e.g. +40712345678)")
+        String phoneNumber
 ) {}

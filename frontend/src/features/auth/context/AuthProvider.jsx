@@ -56,8 +56,8 @@ function AuthProvider({children}) {
         return loginMutation.mutateAsync({email, password});
     }, [loginMutation]);
 
-    const register = useCallback(async ({username, email, password}) => {
-        return registerMutation.mutateAsync({username, email, password});
+    const register = useCallback(async ({username, email, phoneNumber, password}) => {
+        return registerMutation.mutateAsync({username, email, phoneNumber, password});
     }, [registerMutation]);
 
     const logout = useCallback(async () => {
