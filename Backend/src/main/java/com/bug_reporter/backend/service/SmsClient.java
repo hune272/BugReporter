@@ -22,7 +22,8 @@ public class SmsClient {
             payload.put("body", body);
             restTemplate.postForEntity(smsServiceUrl, payload, String.class);
         } catch (Exception e) {
-            System.err.println("Failed to reach SmsService at " + smsServiceUrl + ": " + e.getMessage());
+            System.err.println("SmsClient: Failed to reach SmsService at " + smsServiceUrl + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
