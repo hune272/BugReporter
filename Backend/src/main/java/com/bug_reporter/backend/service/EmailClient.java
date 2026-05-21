@@ -20,7 +20,8 @@ public class EmailClient {
             payload.put("body", body);
             restTemplate.postForEntity(emailServiceUrl, payload, String.class);
         } catch (Exception e) {
-            System.err.println("Failed to reach EmailService at " + emailServiceUrl + ": " + e.getMessage());
+            System.err.println("EmailClient: Failed to reach EmailService at " + emailServiceUrl + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
